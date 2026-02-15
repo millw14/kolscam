@@ -262,6 +262,7 @@ function parseTransaction(tx, kolName, kolAvatar, walletAddress, tokenMetadataMa
     }
 
     // STRATEGY 1: Parse Helius description (most reliable)
+    // Handles: "X swapped N SOL for M TOKEN" and "X swapped N TOKEN for M SOL"
     const swapMatch = tx.description?.match(/swapped\s+([\d,.]+)\s+(\S+)\s+for\s+([\d,.]+)\s+(\S+)/i);
     if (swapMatch) {
         const [, amt1, tok1, amt2, tok2] = swapMatch;
@@ -295,9 +296,39 @@ function parseTransaction(tx, kolName, kolAvatar, walletAddress, tokenMetadataMa
         return result;
     }
 
+    // STRATEGY 1B: Handle "bought X of Y" / "sold X of Y" descriptions (some DEXes)
+    const buyMatch = tx.description?.match(/bought\s+([\d,.]+)\s+(\S+)/i);
+    const sellMatch = tx.description?.match(/sold\s+([\d,.]+)\s+(\S+)/i);
+    if (buyMatch) {
+        result.action = 'Buy';
+        result.tokenSymbol = buyMatch[2];
+        result.tokenAmount = parseFloat(buyMatch[1].replace(/,/g, ''));
+        result.tokenMint = primaryMint;
+    } else if (sellMatch) {
+        result.action = 'Sell';
+        result.tokenSymbol = sellMatch[2];
+        result.tokenAmount = parseFloat(sellMatch[1].replace(/,/g, ''));
+        result.tokenMint = primaryMint;
+    }
+
+    if (result.action && result.tokenSymbol) {
+        // Get SOL amount from native transfers
+        if (tx.nativeTransfers && tx.nativeTransfers.length > 0) {
+            let solAmount = 0;
+            for (const t of tx.nativeTransfers) {
+                if (t.fromUserAccount === walletAddress || t.toUserAccount === walletAddress) {
+                    solAmount = Math.max(solAmount, Math.abs(t.amount));
+                }
+            }
+            if (solAmount > 0) result.amountSol = parseFloat((solAmount / 1e9).toFixed(4));
+        }
+        if (result.amountSol > 0) return result;
+    }
+
     // Skip transfers entirely - we only want buy/sell
-    const transferMatch = tx.description?.match(/transferred/i);
-    if (transferMatch) return null;
+    if (tx.description && /transferred|compress|decompress|burn|mint|create|close/i.test(tx.description)) {
+        return null;
+    }
 
     // STRATEGY 2: Token transfers + metadata map
     if (tx.tokenTransfers && tx.tokenTransfers.length > 0) {
@@ -480,17 +511,32 @@ app.post('/webhook/helius', async (req, res) => {
     // Respond immediately (Helius expects 200 within 5s)
     res.status(200).json({ received: true });
 
-    if (!HELIUS_ENABLED) return; // Don't process if Helius is disabled
+    if (!HELIUS_ENABLED) return;
 
     const transactions = req.body;
-    if (!Array.isArray(transactions)) return;
+    if (!Array.isArray(transactions)) {
+        console.log(`⚠️ Webhook: received non-array body (type: ${typeof req.body})`);
+        return;
+    }
+
+    console.log(`📨 Webhook: received ${transactions.length} transaction(s)`);
 
     let saved = 0;
+    let skippedNoKol = 0;
+    let skippedNoParse = 0;
+    let skippedInvalid = 0;
+    let skippedDupe = 0;
+
     for (const tx of transactions) {
         try {
             // Find which KOL wallet this belongs to
             const involvedAccounts = new Set();
             if (tx.feePayer) involvedAccounts.add(tx.feePayer);
+            if (tx.accountData) {
+                for (const a of tx.accountData) {
+                    if (a.account) involvedAccounts.add(a.account);
+                }
+            }
             if (tx.nativeTransfers) {
                 for (const t of tx.nativeTransfers) {
                     if (t.fromUserAccount) involvedAccounts.add(t.fromUserAccount);
@@ -514,7 +560,10 @@ app.post('/webhook/helius', async (req, res) => {
                 }
             }
 
-            if (!kolWallet || !kol) continue;
+            if (!kolWallet || !kol) {
+                skippedNoKol++;
+                continue;
+            }
 
             // Get token metadata for mints in this tx
             const mints = new Set();
@@ -528,27 +577,35 @@ app.post('/webhook/helius', async (req, res) => {
             // Parse and save
             const isSideWallet = SIDE_WALLET_SET.has(kolWallet);
             const trade = parseTransaction(tx, kol.Name, kol.Avatar, kolWallet, tokenMeta);
-            if (isValidTrade(trade) && trade.signature) {
-                try {
-                    insertTrade.run(
-                        kolWallet, trade.kolName, trade.kolAvatar || '',
-                        trade.action, trade.tokenSymbol, trade.amountSol,
-                        trade.signature, trade.timestamp || 0,
-                        trade.tokenMint || '', trade.tokenAmount || 0
-                    );
-                    saved++;
-                    const walletTag = isSideWallet ? ' [SIDE]' : '';
-                    console.log(`🔔 Webhook: ${kol.Name}${walletTag} ${trade.action} ${trade.tokenSymbol} (${trade.amountSol} SOL)`);
-                } catch (e) { /* duplicate signature — expected */ }
+            if (!trade) {
+                skippedNoParse++;
+                continue;
+            }
+            if (!isValidTrade(trade) || !trade.signature) {
+                skippedInvalid++;
+                continue;
+            }
+
+            try {
+                insertTrade.run(
+                    kolWallet, trade.kolName, trade.kolAvatar || '',
+                    trade.action, trade.tokenSymbol, trade.amountSol,
+                    trade.signature, trade.timestamp || 0,
+                    trade.tokenMint || '', trade.tokenAmount || 0
+                );
+                saved++;
+                const walletTag = isSideWallet ? ' [SIDE]' : '';
+                console.log(`🔔 Webhook: ${kol.Name}${walletTag} ${trade.action} ${trade.tokenSymbol} (${trade.amountSol} SOL)`);
+            } catch (e) {
+                skippedDupe++;
             }
         } catch (err) {
             console.error('Webhook parse error:', err.message);
         }
     }
 
-    if (saved > 0) {
-        console.log(`🔔 Webhook batch: +${saved} new trades saved`);
-    }
+    const total = transactions.length;
+    console.log(`📨 Webhook result: ${saved} saved, ${skippedDupe} dupes, ${skippedNoParse} not-swap, ${skippedInvalid} invalid, ${skippedNoKol} no-KOL (of ${total} total)`);
 });
 
 // ============================
@@ -945,11 +1002,11 @@ app.listen(PORT, '0.0.0.0', () => {
             setTimeout(() => runBackgroundScan(true), 2000);
         }
 
-        // Background scan every 6 hours
-        setInterval(() => runBackgroundScan(), 6 * 60 * 60 * 1000);
+        // Background scan every 24 hours (safety net only, webhooks handle real-time)
+        setInterval(() => runBackgroundScan(), 24 * 60 * 60 * 1000);
 
         console.log(`🔔 Webhook mode active — POST /webhook/helius receives trades`);
-        console.log(`   Background scan every 6 hours as catchup.`);
+        console.log(`   Background scan every 24 hours as safety net.`);
     } else {
         console.log(`⏸️  Helius DISABLED — no scanning, no credits used.`);
         console.log(`   Webhook endpoint is ready but won't process without HELIUS_ENABLED=true`);

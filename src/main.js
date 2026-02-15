@@ -13,6 +13,7 @@ const APP_STATE = {
     tickerInterval: null,
     leaderboardRefreshInterval: null,
     tokensRefreshInterval: null,
+    tradesRefreshInterval: null,
     profileKol: null,
     profileTab: 'main',
 };
@@ -38,7 +39,17 @@ function navigateTo(pageId) {
     APP_STATE.currentPage = pageId;
     navLinks.forEach(link => link.classList.toggle('active', link.dataset.page === pageId));
     pages.forEach(page => page.classList.toggle('hidden', page.id !== `page-${pageId}`));
-    if (pageId === 'trades') renderTrades();
+
+    // Stop trades auto-refresh when leaving trades page
+    if (APP_STATE.tradesRefreshInterval) {
+        clearInterval(APP_STATE.tradesRefreshInterval);
+        APP_STATE.tradesRefreshInterval = null;
+    }
+
+    if (pageId === 'trades') {
+        renderTrades();
+        APP_STATE.tradesRefreshInterval = setInterval(renderTrades, 8000);
+    }
     if (pageId === 'leaderboard') fetchLeaderboard(APP_STATE.leaderboardPeriod);
     if (pageId === 'tokens') fetchTokens();
     if (pageId === 'profile' && APP_STATE.profileKol) renderProfile(APP_STATE.profileKol);

@@ -49,7 +49,7 @@ async function createWebhook() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     webhookURL: WEBHOOK_URL,
-                    transactionTypes: ['SWAP'],
+                    transactionTypes: ['Any'],
                     accountAddresses: WALLETS,
                     webhookType: 'enhanced',
                     txnStatus: 'success',
@@ -66,10 +66,54 @@ async function createWebhook() {
         const data = await res.json();
         console.log(`✅ Webhook created!`);
         console.log(`   Webhook ID: ${data.webhookID}`);
-        console.log(`   Monitoring ${WALLETS.length} wallets for SWAP transactions`);
+        console.log(`   Monitoring ${WALLETS.length} wallets for ALL transaction types`);
         console.log(`\n   💡 Save this ID in your .env as WEBHOOK_ID=${data.webhookID}`);
-        console.log(`   💡 To update wallets later: node setup-webhook.js update\n`);
+        console.log(`   💡 To update: node setup-webhook.js update`);
+        console.log(`   💡 To delete old one first: node setup-webhook.js delete <OLD_ID>\n`);
 
+    } catch (err) {
+        console.error('❌ Error:', err.message);
+        process.exit(1);
+    }
+}
+
+async function updateWebhook() {
+    const webhookId = process.env.WEBHOOK_ID;
+    if (!webhookId) {
+        console.error('❌ WEBHOOK_ID not set in .env');
+        process.exit(1);
+    }
+
+    console.log(`\n🔧 Updating webhook ${webhookId}...`);
+    console.log(`   Wallets: ${WALLETS.length}`);
+    console.log(`   URL: ${WEBHOOK_URL}\n`);
+
+    try {
+        const res = await fetch(
+            `https://api.helius.xyz/v0/webhooks/${webhookId}?api-key=${HELIUS_API_KEY}`,
+            {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    webhookURL: WEBHOOK_URL,
+                    transactionTypes: ['Any'],
+                    accountAddresses: WALLETS,
+                    webhookType: 'enhanced',
+                    txnStatus: 'success',
+                })
+            }
+        );
+
+        if (!res.ok) {
+            const err = await res.text();
+            console.error(`❌ Failed (${res.status}):`, err);
+            process.exit(1);
+        }
+
+        const data = await res.json();
+        console.log(`✅ Webhook updated!`);
+        console.log(`   Now monitoring ${WALLETS.length} wallets for ALL transactions`);
+        console.log(`   Server-side parsing filters to buy/sell only\n`);
     } catch (err) {
         console.error('❌ Error:', err.message);
         process.exit(1);
@@ -115,6 +159,8 @@ const action = process.argv[2] || 'create';
 
 if (action === 'create') {
     createWebhook();
+} else if (action === 'update') {
+    updateWebhook();
 } else if (action === 'list') {
     listWebhooks();
 } else if (action === 'delete') {
@@ -126,7 +172,8 @@ if (action === 'create') {
     deleteWebhook(id);
 } else {
     console.log('Usage:');
-    console.log('  node setup-webhook.js create  - Register webhook with Helius');
+    console.log('  node setup-webhook.js create  - Register new webhook');
+    console.log('  node setup-webhook.js update  - Update existing webhook (uses WEBHOOK_ID from .env)');
     console.log('  node setup-webhook.js list    - List all your webhooks');
     console.log('  node setup-webhook.js delete <ID> - Delete a webhook');
 }
