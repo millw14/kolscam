@@ -1019,15 +1019,52 @@ ul { list-style: none; }
 }
 
 /* ==============================
-   SIDE WALLET BADGE
+   SIDE / BUNDLE WALLET BADGE (Ghost icon)
    ============================== */
 
 .side-badge {
-    font-size: 0.7rem;
-    color: #f59e0b;
-    margin-left: 4px;
+    width: 16px;
+    height: 16px;
+    margin-left: 5px;
     vertical-align: middle;
-    opacity: 0.85;
+    object-fit: contain;
+    filter: drop-shadow(0 0 4px rgba(255, 42, 42, 0.4));
+    flex-shrink: 0;
+}
+
+/* Highlighted bundle wallet trades in feeds */
+.trade-card.bundle-trade {
+    background: rgba(255, 42, 42, 0.05);
+    border-color: rgba(255, 42, 42, 0.12);
+}
+.trade-card.bundle-trade:hover {
+    background: rgba(255, 42, 42, 0.08);
+    border-color: rgba(255, 42, 42, 0.2);
+}
+
+.ticker-item.bundle-trade {
+    background: rgba(255, 42, 42, 0.05);
+    border-color: rgba(255, 42, 42, 0.12);
+}
+.ticker-item.bundle-trade:hover {
+    background: rgba(255, 42, 42, 0.08);
+    border-color: rgba(255, 42, 42, 0.2);
+}
+
+/* Ghost icon in profile trade rows */
+.bundle-trade-ghost {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 3px rgba(255, 42, 42, 0.3));
+}
+
+.profile-trade-row.bundle-trade {
+    background: rgba(255, 42, 42, 0.04);
+}
+.profile-trade-row.bundle-trade:hover {
+    background: rgba(255, 42, 42, 0.08);
 }
 
 .kol-link {
@@ -1206,8 +1243,11 @@ ul { list-style: none; }
     font-size: 0.9rem;
 }
 .wallet-side-icon {
-    color: #f59e0b;
-    font-size: 0.9rem;
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 3px rgba(255, 42, 42, 0.3));
 }
 
 .wallet-tag {
@@ -1224,8 +1264,16 @@ ul { list-style: none; }
     color: var(--accent-green);
 }
 .wallet-tag.bundle {
-    background: rgba(245,158,11,0.1);
-    color: #f59e0b;
+    background: rgba(255,42,42,0.1);
+    color: var(--accent-red);
+}
+
+.bundle-wallet-row {
+    background: rgba(255, 42, 42, 0.04);
+    border-left: 2px solid rgba(255, 42, 42, 0.3);
+}
+.bundle-wallet-row:hover {
+    background: rgba(255, 42, 42, 0.08);
 }
 
 /* Profile Tabs */

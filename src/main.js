@@ -315,7 +315,8 @@ async function renderTrades() {
             ? `<a href="https://trade.padre.gg/trade/solana/${trade.tokenMint}" target="_blank" class="trade-token token-link">${trade.tokenSymbol}</a>`
             : `<span class="trade-token">${trade.tokenSymbol}</span>`;
 
-        const sideTag = trade.isSideWallet ? '<i class="ri-git-branch-line side-badge" title="Bundle wallet"></i>' : '';
+        const sideTag = trade.isSideWallet ? '<img src="/sidewallet.png" class="side-badge" title="Bundle wallet" />' : '';
+        if (trade.isSideWallet) card.classList.add('bundle-trade');
 
         card.innerHTML = `
       <div class="trade-header">
@@ -537,9 +538,9 @@ async function renderProfile(kolName) {
 
     sideWallets.forEach(sw => {
         walletsHtml += `
-            <div class="wallet-row">
+            <div class="wallet-row bundle-wallet-row">
                 <div class="wallet-row-left">
-                    <i class="ri-git-branch-line wallet-side-icon"></i>
+                    <img src="/sidewallet.png" class="wallet-side-icon" />
                     <span>${sw.substring(0, 12)}...${sw.slice(-8)}</span>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;">
@@ -617,11 +618,12 @@ async function loadBundleTrades(kol) {
     profileTrades.innerHTML = '';
     data.trades.forEach(trade => {
         const row = document.createElement('div');
-        row.className = 'profile-trade-row';
+        row.className = 'profile-trade-row bundle-trade';
         const actionClass = trade.action.toLowerCase();
         const shortWallet = trade.wallet ? trade.wallet.substring(0, 6) + '...' : '';
 
         row.innerHTML = `
+            <img src="/sidewallet.png" class="bundle-trade-ghost" title="Bundle wallet" />
             <span class="profile-trade-action ${actionClass}">${trade.action}</span>
             <span class="profile-trade-token">${trade.tokenSymbol}</span>
             <span class="profile-trade-amount">${formatTokenAmount(trade.tokenAmount)}</span>
@@ -706,7 +708,8 @@ async function fetchTickerTrades() {
                 ? `<a href="https://trade.padre.gg/trade/solana/${trade.tokenMint}" target="_blank" class="ticker-token token-link">${trade.tokenSymbol}</a>`
                 : `<span class="ticker-token">${trade.tokenSymbol}</span>`;
 
-            const tickerSideTag = trade.isSideWallet ? '<i class="ri-git-branch-line side-badge" title="Bundle wallet"></i>' : '';
+            const tickerSideTag = trade.isSideWallet ? '<img src="/sidewallet.png" class="side-badge" title="Bundle wallet" />' : '';
+            if (trade.isSideWallet) div.classList.add('bundle-trade');
 
             div.innerHTML = `
                 <img src="${trade.kolAvatar || '/logo.png'}" class="ticker-kol-img" onerror="this.src='/logo.png'" />
