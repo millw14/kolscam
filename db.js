@@ -146,12 +146,12 @@ const getTradesSince = db.prepare(`
   SELECT * FROM kol_trades WHERE tx_timestamp >= ? AND action IN ('Buy', 'Sell') ORDER BY tx_timestamp DESC LIMIT ?
 `);
 
-// Leaderboard: aggregate stats per KOL with buy/sell split
+// Leaderboard: aggregate stats per KOL name (combines main + side wallets)
 const getLeaderboardStats = db.prepare(`
   SELECT 
-    wallet,
     kol_name,
-    kol_avatar,
+    MAX(kol_avatar) as kol_avatar,
+    MIN(wallet) as wallet,
     COUNT(*) as trade_count,
     SUM(CASE WHEN action = 'Buy' THEN 1 ELSE 0 END) as buy_count,
     SUM(CASE WHEN action = 'Sell' THEN 1 ELSE 0 END) as sell_count,
@@ -163,8 +163,7 @@ const getLeaderboardStats = db.prepare(`
     , 1) as win_rate
   FROM kol_trades 
   WHERE tx_timestamp >= ? AND action IN ('Buy', 'Sell')
-  GROUP BY wallet
-  HAVING trade_count >= 2
+  GROUP BY kol_name
   ORDER BY pnl DESC
   LIMIT ?
 `);

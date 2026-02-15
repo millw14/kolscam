@@ -455,7 +455,7 @@ async function runBackgroundScan(isBackfill = false) {
 
     const validKols = COL_DATA.filter(k => k['Wallet Address'] && k['Wallet Address'].length > 10);
     const shuffled = [...validKols].sort(() => Math.random() - 0.5);
-    const txLimit = isBackfill ? 50 : 10;
+    const txLimit = isBackfill ? 100 : 10;
 
     scanProgress = { done: 0, total: shuffled.length };
     console.log(`\n🔍 ${isBackfill ? 'INITIAL BACKFILL' : 'Background scan'}: ${shuffled.length} KOL wallets (${txLimit} txns each)...\n`);
@@ -617,6 +617,21 @@ app.post('/webhook/helius', async (req, res) => {
  */
 app.get('/api/sol-price', (req, res) => {
     res.json({ price: SOL_PRICE_USD });
+});
+
+/**
+ * POST /api/backfill - Trigger a manual backfill scan
+ */
+app.post('/api/backfill', async (req, res) => {
+    if (!HELIUS_ENABLED) {
+        return res.status(400).json({ error: 'Helius is disabled' });
+    }
+    if (scannerPhase === 'scanning') {
+        return res.status(409).json({ error: 'Scan already in progress', progress: `${scanProgress.done}/${scanProgress.total}` });
+    }
+    console.log('📥 Manual backfill triggered via API');
+    res.json({ success: true, message: 'Backfill started (100 txns/KOL)' });
+    runBackgroundScan(true);
 });
 
 /**
@@ -998,7 +1013,7 @@ app.listen(PORT, '0.0.0.0', () => {
 
         // One-time backfill on first start if DB is sparse
         if (existing.count < 100) {
-            console.log(`📥 DB has only ${existing.count} trades — running initial backfill (50 txns/KOL)...`);
+            console.log(`📥 DB has only ${existing.count} trades — running initial backfill (100 txns/KOL)...`);
             setTimeout(() => runBackgroundScan(true), 2000);
         }
 
