@@ -1,0 +1,29 @@
+node_modules/
+dist/
+.env
+*.db
+*.db-wal
+*.db-shm
+pictures/
+KOLSCAM.xlsx
+*.pyc
+
+# Utility/temp scripts (not needed for deploy)
+_match_temp.py
+_m.py
+merge_kols.py
+gen_data_js.py
+convert_data_esm.py
+csv_to_excel.py
+download_avatars.py
+extract_kols.py
+match_kols.py
+update_csv_from_files.py
+test-api.js
+
+# Old/unused source files at root level
+/raw_kols.txt
+/script.js
+/source.html
+/style.css
+/data.js

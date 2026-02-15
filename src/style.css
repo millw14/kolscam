@@ -1,0 +1,1050 @@
+:root {
+    --bg-dark: #050505;
+    --bg-card: #0f0f0f;
+    --bg-hover: #1a1a1a;
+    --text-primary: #e0e0e0;
+    --text-secondary: #888888;
+    --accent-green: #00e092;
+    --accent-red: #ff2a2a;
+    --accent-blue: #3b82f6;
+    --border-color: #1f1f1f;
+    --nav-height: 64px;
+    --glass-bg: rgba(10, 10, 10, 0.7);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6,
+.nav-logo, .rank-cell, .stat-value,
+.bundle-count, .trade-type, .count-buy, .count-sell {
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+body {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+        radial-gradient(circle at 50% -10%, #1a0505 0%, transparent 50%),
+        radial-gradient(circle at 85% 20%, rgba(255, 59, 59, 0.04) 0%, transparent 30%),
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.035'/%3E%3C/svg%3E");
+    background-attachment: fixed;
+}
+
+a { text-decoration: none; color: inherit; }
+ul { list-style: none; }
+
+/* ==============================
+   NAVBAR
+   ============================== */
+
+.navbar {
+    height: var(--nav-height);
+    background-color: var(--glass-bg);
+    border-bottom: var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 1.2rem;
+    letter-spacing: -0.5px;
+    color: #fff;
+}
+
+.nav-logo img { height: 28px; width: 28px; }
+
+/* SOL Price Badge */
+.sol-price-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-color);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.sol-price-badge i {
+    color: var(--accent-green);
+    font-size: 1rem;
+}
+
+.nav-links {
+    display: flex;
+    gap: 20px;
+}
+
+.nav-link {
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: color 0.15s;
+    padding: 4px 0;
+}
+
+.nav-link:hover, .nav-link.active {
+    color: var(--text-primary);
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.pump-btn {
+    background: rgba(0, 224, 146, 0.1);
+    border: 1px solid rgba(0, 224, 146, 0.2);
+    color: var(--accent-green);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pump-btn:hover {
+    background: rgba(0, 224, 146, 0.15);
+    border-color: var(--accent-green);
+}
+
+.search-icon {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.search-icon:hover { color: var(--text-primary); }
+
+.settings-icon {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.settings-icon:hover { color: var(--text-primary); }
+
+.btn-connect {
+    background: rgba(255, 255, 255, 0.06);
+    color: white;
+    border: 1px solid var(--border-color);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-connect:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #444;
+}
+
+/* ==============================
+   PAGE LAYOUT
+   ============================== */
+
+.content-wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 16px;
+    min-height: calc(100vh - var(--nav-height));
+}
+
+.page {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.hidden { display: none !important; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==============================
+   LANDING PAGE
+   ============================== */
+
+#page-landing {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 60px;
+    text-align: center;
+}
+
+.hero-section h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 40px;
+    letter-spacing: -1.5px;
+    background: linear-gradient(to right, #fff, #aaa);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.highlight-red {
+    background: none;
+    -webkit-text-fill-color: var(--accent-red);
+    text-shadow: 0 0 20px rgba(255, 42, 42, 0.4);
+}
+
+.hero-search {
+    display: flex;
+    width: 100%;
+    max-width: 580px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 4px;
+    margin-bottom: 40px;
+}
+
+.hero-search input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 12px 16px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    outline: none;
+}
+
+.hero-search .search-btn {
+    background: var(--accent-blue);
+    border: none;
+    border-radius: 6px;
+    width: 48px;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ==============================
+   TICKER LIST (Landing Feed)
+   ============================== */
+
+.ticker-list {
+    width: 100%;
+    max-width: 700px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: left;
+}
+
+.ticker-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: #ccc;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 6px;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    flex-wrap: wrap;
+}
+
+.ticker-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.ticker-kol-img {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #222;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.ticker-token-img {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.ticker-name {
+    color: white;
+    font-weight: 700;
+}
+
+.ticker-verb {
+    color: #888;
+    font-size: 0.85rem;
+}
+
+.ticker-sol {
+    font-weight: 700;
+}
+.ticker-sol.buy { color: var(--accent-green); }
+.ticker-sol.sell { color: var(--accent-red); }
+
+.ticker-token-amt {
+    color: #666;
+    font-size: 0.82rem;
+}
+
+.ticker-token {
+    color: #fff;
+    font-weight: 700;
+}
+
+.ticker-at {
+    color: #888;
+    font-size: 0.82rem;
+}
+
+.ticker-price {
+    color: #aaa;
+}
+
+.ticker-time {
+    margin-left: auto;
+    color: #555;
+    font-size: 0.78rem;
+    font-family: 'Space Grotesk', sans-serif;
+    flex-shrink: 0;
+}
+
+/* ==============================
+   TRADES PAGE
+   ============================== */
+
+.trades-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 16px;
+}
+
+.trade-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 10px 14px;
+    transition: all 0.2s;
+}
+
+.trade-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.trade-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.trade-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #222;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.trade-content {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    font-size: 0.9rem;
+    flex-wrap: wrap;
+}
+
+.trade-name { font-weight: 700; color: var(--text-primary); }
+.trade-verb { font-weight: 600; }
+.trade-verb.buy { color: var(--accent-green); }
+.trade-verb.sell { color: var(--accent-red); }
+
+.trade-sol { font-weight: 700; }
+.trade-sol.buy { color: var(--accent-green); }
+.trade-sol.sell { color: var(--accent-red); }
+
+.trade-token-amount {
+    color: #666;
+    font-size: 0.82rem;
+}
+
+.trade-token {
+    color: #fff;
+    font-weight: 700;
+}
+
+.trade-price {
+    color: #888;
+    font-size: 0.82rem;
+}
+
+.token-img-small {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.trade-time {
+    color: #555;
+    font-size: 0.78rem;
+    white-space: nowrap;
+    font-family: 'Space Grotesk', sans-serif;
+    flex-shrink: 0;
+}
+
+/* ==============================
+   LEADERBOARD
+   ============================== */
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.page-header h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.time-toggles {
+    background: var(--bg-card);
+    padding: 2px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    display: flex;
+}
+
+.toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.15s;
+}
+
+.toggle-btn.active {
+    background: #222;
+    color: var(--text-primary);
+}
+
+.leaderboard-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.solscan-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.solscan-table thead {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.solscan-table th {
+    text-align: left;
+    padding: 14px 20px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.solscan-table td {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+    font-size: 0.95rem;
+    color: #d1d5db;
+}
+
+.solscan-table tr {
+    transition: background-color 0.15s;
+}
+
+.solscan-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+}
+
+/* Rank Styling */
+.rank-cell {
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    width: 50px;
+}
+
+.rank-icon { font-size: 1.2rem; }
+
+.row-gold {
+    background: linear-gradient(90deg, rgba(234, 179, 8, 0.12) 0%, rgba(234, 179, 8, 0.03) 100%) !important;
+    border-left: 3px solid #eab308;
+}
+
+.row-silver {
+    background: linear-gradient(90deg, rgba(148, 163, 184, 0.12) 0%, rgba(148, 163, 184, 0.03) 100%) !important;
+    border-left: 3px solid #94a3b8;
+}
+
+.row-bronze {
+    background: linear-gradient(90deg, rgba(217, 119, 6, 0.12) 0%, rgba(217, 119, 6, 0.03) 100%) !important;
+    border-left: 3px solid #d97706;
+}
+
+.rank-text { color: #666; font-weight: 500; }
+.rank-gold { color: #ffd700; text-shadow: 0 0 15px rgba(255, 215, 0, 0.4); }
+.rank-silver { color: #e2e8f0; text-shadow: 0 0 15px rgba(226, 232, 240, 0.3); }
+.rank-bronze { color: #cd7f32; text-shadow: 0 0 15px rgba(205, 127, 50, 0.3); }
+
+/* Trader Info */
+.trader-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 4px 0;
+}
+
+.kol-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #222;
+    border: 2px solid rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+}
+
+.trader-details {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+}
+
+.trader-name-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.trader-name {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.social-link {
+    color: #888;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    opacity: 0.7;
+    transition: all 0.2s;
+}
+
+.social-link:hover {
+    opacity: 1;
+    color: var(--text-primary);
+}
+
+.wallet-inline {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.72rem;
+    color: #555;
+}
+
+/* Buy/Sell Counts - Kolscan style */
+.trades-cell {
+    text-align: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.count-buy {
+    color: var(--accent-green);
+    font-weight: 700;
+}
+
+.count-separator {
+    color: #444;
+    margin: 0 2px;
+    font-weight: 400;
+}
+
+.count-sell {
+    color: var(--accent-red);
+    font-weight: 700;
+}
+
+/* PnL Styling */
+.pnl-cell {
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.pnl-usd {
+    font-size: 0.82rem;
+    color: #666;
+    font-weight: 400;
+    margin-left: 4px;
+}
+
+.buy { color: var(--accent-green); }
+.sell { color: var(--accent-red); }
+
+/* ==============================
+   TOKENS PAGE
+   ============================== */
+
+.tokens-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.tokens-column-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+
+.tokens-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.token-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.2s;
+}
+
+.token-card:hover {
+    border-color: #333;
+}
+
+.token-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.token-card-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.token-card-img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #222;
+    flex-shrink: 0;
+}
+
+.token-card-img-placeholder {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #333, #222);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #888;
+    flex-shrink: 0;
+}
+
+.token-card-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.token-card-name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.token-card-mcap {
+    font-size: 0.72rem;
+    color: var(--accent-blue);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+}
+
+.token-card-change {
+    font-weight: 700;
+    font-size: 0.9rem;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.token-card-change.positive { color: var(--accent-green); }
+.token-card-change.negative { color: var(--accent-red); }
+
+/* Token Positions */
+.token-positions {
+    padding: 4px 0;
+}
+
+.token-position-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    transition: background 0.15s;
+}
+
+.token-position-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.token-pos-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #222;
+    flex-shrink: 0;
+}
+
+.pos-buy {
+    color: var(--accent-green);
+    font-weight: 600;
+    font-family: 'Space Grotesk', sans-serif;
+    min-width: 0;
+    flex: 1;
+}
+
+.pos-sell {
+    color: var(--accent-red);
+    font-weight: 600;
+    font-family: 'Space Grotesk', sans-serif;
+    min-width: 0;
+    flex: 1;
+}
+
+.pos-tokens {
+    color: #555;
+    font-weight: 400;
+    font-size: 0.75rem;
+}
+
+.pos-time {
+    color: #555;
+    font-size: 0.72rem;
+    font-family: 'Space Grotesk', sans-serif;
+    flex-shrink: 0;
+    min-width: 28px;
+    text-align: right;
+}
+
+.token-loading {
+    text-align: center;
+    color: #666;
+    padding: 20px;
+    font-size: 0.85rem;
+}
+
+/* ==============================
+   MODALS
+   ============================== */
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.modal:not(.hidden) {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-content {
+    background: #0a0a0a;
+    border: 1px solid var(--border-color);
+    padding: 0;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 85vh;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    animation: modalSlideUp 0.3s ease-out;
+}
+
+@keyframes modalSlideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.close-modal {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    z-index: 10;
+    transition: color 0.2s;
+}
+
+.close-modal:hover { color: var(--text-primary); }
+
+/* Profile Modal */
+.profile-header {
+    padding: 30px 24px;
+    background: linear-gradient(180deg, rgba(20, 20, 20, 1) 0%, rgba(10, 10, 10, 1) 100%);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid var(--bg-card);
+    box-shadow: 0 0 0 2px var(--border-color);
+    margin-bottom: 16px;
+    object-fit: cover;
+}
+
+.profile-name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.profile-stats {
+    display: flex;
+    gap: 24px;
+    margin-top: 12px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Bundle Section */
+.bundle-section {
+    padding: 24px;
+    flex: 1;
+    overflow-y: auto;
+    background: #050505;
+}
+
+.section-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.bundle-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bundle-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.bundle-item:hover {
+    border-color: #333;
+    background: #1a1a1a;
+}
+
+.bundle-wallet {
+    font-family: 'Space Grotesk', monospace;
+    font-size: 0.8rem;
+    color: #888;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    word-break: break-all;
+}
+
+.copy-icon {
+    font-size: 0.9rem;
+    color: #444;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.copy-icon:hover { color: var(--text-primary); }
+
+/* Scrollbar */
+.modal-content::-webkit-scrollbar { width: 6px; }
+.modal-content::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+/* ==============================
+   TOKEN LINKS (Padre.gg)
+   ============================== */
+
+.token-link {
+    color: var(--accent-yellow, #f0b90b);
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.15s, text-decoration 0.15s;
+}
+
+.token-link:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+
+/* ==============================
+   RESPONSIVE
+   ============================== */
+
+@media (max-width: 900px) {
+    .tokens-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .navbar {
+        padding: 0 12px;
+        gap: 8px;
+    }
+
+    .nav-links { gap: 12px; }
+
+    .hero-section h1 { font-size: 2rem; }
+
+    .solscan-table td,
+    .solscan-table th {
+        padding: 10px 12px;
+    }
+}
+
+@media (max-width: 600px) {
+    .nav-right .pump-btn,
+    .nav-right .settings-icon { display: none; }
+
+    .solscan-table .wallet-inline { display: none; }
+}

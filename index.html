@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kolscam | Track KOL Memecoin Trades</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+
+<body>
+    <div id="app">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="nav-left">
+                <a href="#" class="nav-logo" data-page="landing">
+                    <img src="/logo.png" alt="Kolscam Logo" />
+                    <span>Kolscam</span>
+                </a>
+                <div class="sol-price-badge" id="sol-price-badge">
+                    <i class="ri-money-dollar-circle-line"></i>
+                    <span id="sol-price-display">$--</span>
+                </div>
+                <div class="nav-links">
+                    <a href="#" class="nav-link" data-page="trades">Trades</a>
+                    <a href="#" class="nav-link" data-page="tokens">Tokens</a>
+                    <a href="#" class="nav-link active" data-page="leaderboard">Leaderboard</a>
+                </div>
+            </div>
+            <div class="nav-right">
+                <div class="pump-btn">
+                    <i class="ri-copper-coin-line" style="font-size:1.1rem;"></i>
+                    <span>Pump app</span>
+                </div>
+                <div class="search-icon"><i class="ri-search-line"></i></div>
+                <button class="btn-connect">Connect Wallet</button>
+                <div class="settings-icon"><i class="ri-settings-3-line"></i></div>
+            </div>
+        </nav>
+
+        <!-- Pages Container -->
+        <main class="content-wrapper">
+
+            <!-- Landing Page -->
+            <section id="page-landing" class="page hidden">
+                <div class="hero-section">
+                    <h1>Track the Top Memecoin<br />Traders in <span class="highlight-red">Realtime</span></h1>
+                    <div class="hero-search">
+                        <input type="text" placeholder="Enter wallet address" />
+                        <button class="search-btn"><i class="ri-search-line"></i></button>
+                    </div>
+
+                    <!-- Ticker List (Recent Trades) -->
+                    <div class="ticker-list" id="landing-ticker">
+                        <!-- JS Populated -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Trades Page -->
+            <section id="page-trades" class="page hidden">
+                <div class="page-header">
+                    <h2>Realtime Trades</h2>
+                </div>
+                <div class="trades-grid" id="trades-grid">
+                    <!-- JS will populate trades here -->
+                </div>
+            </section>
+
+            <!-- Leaderboard Page -->
+            <section id="page-leaderboard" class="page">
+                <div class="page-header">
+                    <h2>KOL Leaderboard</h2>
+                    <div class="time-toggles">
+                        <button class="toggle-btn active">Daily</button>
+                        <button class="toggle-btn">Weekly</button>
+                        <button class="toggle-btn">Monthly</button>
+                    </div>
+                </div>
+
+                <div class="leaderboard-table-wrapper">
+                    <div class="leaderboard-card">
+                        <table class="solscan-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;"></th>
+                                    <th>Trader</th>
+                                    <th style="text-align: center;">Trades</th>
+                                    <th style="text-align: right;">PnL</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboard-body">
+                                <!-- JS Populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tokens Page -->
+            <section id="page-tokens" class="page hidden">
+                <div class="page-header">
+                    <h2>Realtime Token Tracker</h2>
+                </div>
+                <div class="tokens-grid">
+                    <div class="tokens-column">
+                        <h3 class="tokens-column-title">Low Caps</h3>
+                        <div class="tokens-list" id="tokens-lowcaps">
+                            <!-- JS populated -->
+                        </div>
+                    </div>
+                    <div class="tokens-column">
+                        <h3 class="tokens-column-title">$100k+</h3>
+                        <div class="tokens-list" id="tokens-midcaps">
+                            <!-- JS populated -->
+                        </div>
+                    </div>
+                    <div class="tokens-column">
+                        <h3 class="tokens-column-title">$1m+</h3>
+                        <div class="tokens-list" id="tokens-highcaps">
+                            <!-- JS populated -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Profile/Side Wallet Modal -->
+        <div id="side-wallet-modal" class="modal hidden">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h3>Side Wallet Inspection</h3>
+                <div class="modal-body">
+                    <img src="/sidewallet.png" alt="Side Wallet Evidence" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Report/Submit Wallet Modal -->
+        <div id="report-modal" class="modal hidden">
+            <div class="modal-content" style="max-width:450px;">
+                <span class="close-modal" id="close-report-modal">&times;</span>
+                <div class="profile-header" style="padding:24px;">
+                    <div class="profile-name" style="margin-bottom:0;"><i class="ri-alarm-warning-line"
+                            style="color:var(--accent-red);margin-right:8px;"></i> Report Bundle Wallet</div>
+                </div>
+                <div class="bundle-section" style="padding:20px 24px;">
+                    <form id="report-form">
+                        <div style="margin-bottom:16px;">
+                            <label
+                                style="display:block; font-size:0.8rem; color:#888; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">Wallet
+                                Address *</label>
+                            <input type="text" id="report-address" placeholder="Enter Solana wallet address" required
+                                style="width:100%; background:var(--bg-card); border:1px solid var(--border-color); color:var(--text-primary); padding:12px 16px; border-radius:8px; font-size:0.9rem; font-family:'Space Grotesk',sans-serif; outline:none;" />
+                        </div>
+                        <div style="margin-bottom:16px;">
+                            <label
+                                style="display:block; font-size:0.8rem; color:#888; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">Label
+                                (Optional)</label>
+                            <input type="text" id="report-label" placeholder="e.g. Suspected insider"
+                                style="width:100%; background:var(--bg-card); border:1px solid var(--border-color); color:var(--text-primary); padding:12px 16px; border-radius:8px; font-size:0.9rem; outline:none;" />
+                        </div>
+                        <div style="margin-bottom:20px;">
+                            <label
+                                style="display:block; font-size:0.8rem; color:#888; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">Notes
+                                (Optional)</label>
+                            <textarea id="report-notes" placeholder="Additional details..." rows="3"
+                                style="width:100%; background:var(--bg-card); border:1px solid var(--border-color); color:var(--text-primary); padding:12px 16px; border-radius:8px; font-size:0.9rem; outline:none; resize:vertical; font-family:inherit;"></textarea>
+                        </div>
+                        <button type="submit"
+                            style="width:100%; padding:12px; background:var(--accent-red); color:white; border:none; border-radius:8px; font-weight:700; font-size:0.95rem; cursor:pointer; font-family:'Space Grotesk',sans-serif; transition:background 0.2s;">
+                            <i class="ri-send-plane-fill" style="margin-right:6px;"></i> Submit Report
+                        </button>
+                        <div id="report-status" style="margin-top:12px; text-align:center; font-size:0.85rem;"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>

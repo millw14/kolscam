@@ -1,0 +1,23 @@
+{
+    "name": "kolscam",
+    "private": true,
+    "version": "1.0.0",
+    "type": "module",
+    "engines": {
+        "node": ">=18"
+    },
+    "scripts": {
+        "dev": "vite",
+        "server": "node server.js",
+        "build": "vite build",
+        "start": "node server.js",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "better-sqlite3": "^12.6.2",
+        "cors": "^2.8.6",
+        "dotenv": "^17.3.1",
+        "express": "^5.2.1",
+        "vite": "^5.0.0"
+    }
+}
