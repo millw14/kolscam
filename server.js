@@ -24,13 +24,24 @@ const HELIUS_BASE = `https://api.helius.xyz`;
 // Gate Helius usage behind a flag — set HELIUS_ENABLED=true when ready
 const HELIUS_ENABLED = process.env.HELIUS_ENABLED === 'true';
 
-// Pre-build wallet→avatar map for fast lookups
+// Pre-build wallet→avatar map for fast lookups (main + side wallets)
 const WALLET_AVATAR_MAP = {};
 const WALLET_KOL_MAP = {};
+const SIDE_WALLET_SET = new Set(); // Track which wallets are side wallets
 for (const kol of COL_DATA) {
     if (kol['Wallet Address']) {
         WALLET_AVATAR_MAP[kol['Wallet Address']] = kol.Avatar || '/logo.png';
         WALLET_KOL_MAP[kol['Wallet Address']] = kol;
+    }
+    // Map side wallets back to the same KOL
+    if (Array.isArray(kol['Side Wallets'])) {
+        for (const sw of kol['Side Wallets']) {
+            if (sw && sw.length > 10 && sw !== kol['Wallet Address']) {
+                WALLET_AVATAR_MAP[sw] = kol.Avatar || '/logo.png';
+                WALLET_KOL_MAP[sw] = kol;
+                SIDE_WALLET_SET.add(sw);
+            }
+        }
     }
 }
 
@@ -505,6 +516,7 @@ app.post('/webhook/helius', async (req, res) => {
             const tokenMeta = mints.size > 0 ? await batchGetTokenMetadata([...mints]) : {};
 
             // Parse and save
+            const isSideWallet = SIDE_WALLET_SET.has(kolWallet);
             const trade = parseTransaction(tx, kol.Name, kol.Avatar, kolWallet, tokenMeta);
             if (isValidTrade(trade) && trade.signature) {
                 try {
@@ -515,7 +527,8 @@ app.post('/webhook/helius', async (req, res) => {
                         trade.tokenMint || '', trade.tokenAmount || 0
                     );
                     saved++;
-                    console.log(`🔔 Webhook: ${kol.Name} ${trade.action} ${trade.tokenSymbol} (${trade.amountSol} SOL)`);
+                    const walletTag = isSideWallet ? ' [SIDE]' : '';
+                    console.log(`🔔 Webhook: ${kol.Name}${walletTag} ${trade.action} ${trade.tokenSymbol} (${trade.amountSol} SOL)`);
                 } catch (e) { /* duplicate signature — expected */ }
             }
         } catch (err) {
@@ -634,7 +647,8 @@ app.get('/api/trades/feed', (req, res) => {
                 tokenPrice: t.token_price || 0,
                 amountSol: t.amount_sol,
                 timestamp: t.tx_timestamp,
-                signature: t.signature
+                signature: t.signature,
+                isSideWallet: SIDE_WALLET_SET.has(t.wallet)
             }))
         });
     } catch (err) {
@@ -671,6 +685,47 @@ app.get('/api/trades/:wallet', (req, res) => {
             solPrice: SOL_PRICE_USD,
             kol: kol ? { name: kol.Name, twitter: kol['Twitter Handle'], avatar: kol.Avatar } : null,
             trades
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed' });
+    }
+});
+
+/**
+ * GET /api/kol/:name/sides - Get side wallet trades for a KOL
+ */
+app.get('/api/kol/:name/sides', (req, res) => {
+    const { name } = req.params;
+    try {
+        const kol = COL_DATA.find(k => k.Name.toLowerCase() === name.toLowerCase());
+        if (!kol) return res.status(404).json({ error: 'KOL not found' });
+
+        const sideWallets = (kol['Side Wallets'] || []).filter(
+            sw => sw && sw.length > 10 && sw !== kol['Wallet Address']
+        );
+
+        // Get trades for each side wallet from DB
+        const allTrades = getRecentTradesRaw.all(500);
+        const sideTrades = allTrades
+            .filter(t => sideWallets.includes(t.wallet))
+            .map(t => ({
+                wallet: t.wallet,
+                action: t.action,
+                tokenSymbol: t.token_symbol,
+                tokenMint: t.token_mint || '',
+                tokenAmount: t.token_amount || 0,
+                amountSol: t.amount_sol,
+                timestamp: t.tx_timestamp,
+                signature: t.signature,
+                isSideWallet: true
+            }));
+
+        res.json({
+            kolName: kol.Name,
+            mainWallet: kol['Wallet Address'],
+            sideWallets,
+            solPrice: SOL_PRICE_USD,
+            trades: sideTrades
         });
     } catch (err) {
         res.status(500).json({ error: 'Failed' });

@@ -20,10 +20,22 @@ if (!WEBHOOK_URL) {
     process.exit(1);
 }
 
-// Auto-build wallet list from data.js (main wallets only, no empties)
-const WALLETS = COL_DATA
-    .map(kol => kol['Wallet Address'])
-    .filter(w => w && w.length > 10);
+// Auto-build wallet list from data.js (main + side wallets, deduplicated)
+const walletSet = new Set();
+for (const kol of COL_DATA) {
+    // Main wallet
+    if (kol['Wallet Address'] && kol['Wallet Address'].length > 10) {
+        walletSet.add(kol['Wallet Address']);
+    }
+    // Side wallets
+    if (Array.isArray(kol['Side Wallets'])) {
+        for (const sw of kol['Side Wallets']) {
+            if (sw && sw.length > 10) walletSet.add(sw);
+        }
+    }
+}
+const WALLETS = [...walletSet];
+console.log(`📊 ${COL_DATA.length} KOLs → ${WALLETS.length} unique wallets (main + side)`);
 
 async function createWebhook() {
     console.log(`\n🔧 Registering Helius webhook for ${WALLETS.length} wallets...`);
