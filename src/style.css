@@ -157,21 +157,32 @@ ul { list-style: none; }
 }
 .settings-icon:hover { color: var(--text-primary); }
 
-.btn-connect {
-    background: rgba(255, 255, 255, 0.06);
-    color: white;
-    border: 1px solid var(--border-color);
+/* Submit Side Wallet Button */
+.btn-submit-wallet {
+    background: rgba(255, 42, 42, 0.08);
+    color: var(--accent-red);
+    border: 1px solid rgba(255, 42, 42, 0.2);
     padding: 6px 14px;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Space Grotesk', sans-serif;
 }
-
-.btn-connect:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: #444;
+.btn-submit-wallet:hover {
+    background: rgba(255, 42, 42, 0.15);
+    border-color: rgba(255, 42, 42, 0.4);
+    box-shadow: 0 0 16px rgba(255, 42, 42, 0.15);
+}
+.btn-ghost-icon {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 4px rgba(255, 42, 42, 0.5));
 }
 
 /* ==============================
@@ -1399,6 +1410,221 @@ ul { list-style: none; }
 }
 
 /* ==============================
+   SUBMIT SIDE WALLET MODAL
+   ============================== */
+
+.submit-modal-content {
+    max-width: 480px;
+    background: #080808;
+    border: 1px solid rgba(255, 42, 42, 0.15);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.submit-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 24px 28px 16px;
+    border-bottom: 1px solid var(--border-color);
+    background: linear-gradient(180deg, rgba(255, 42, 42, 0.06) 0%, transparent 100%);
+}
+
+.submit-modal-ghost {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 10px rgba(255, 42, 42, 0.4));
+    animation: ghostFloat 3s ease-in-out infinite;
+}
+
+@keyframes ghostFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+.submit-modal-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.submit-modal-subtitle {
+    font-size: 0.78rem;
+    color: #666;
+    margin: 2px 0 0;
+}
+
+.submit-form {
+    padding: 20px 28px 28px;
+}
+
+.submit-field {
+    margin-bottom: 16px;
+}
+
+.submit-label {
+    display: block;
+    font-size: 0.72rem;
+    color: #888;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.submit-optional {
+    color: #555;
+    text-transform: none;
+    font-weight: 400;
+}
+
+.submit-select-wrapper {
+    position: relative;
+}
+
+.submit-select {
+    width: 100%;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 11px 16px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-family: 'Outfit', sans-serif;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23888' viewBox='0 0 24 24'%3E%3Cpath d='M12 16l-6-6h12z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    transition: border-color 0.15s;
+}
+.submit-select:focus {
+    border-color: rgba(255, 42, 42, 0.4);
+}
+
+.submit-select option {
+    background: #0f0f0f;
+    color: var(--text-primary);
+}
+
+.submit-input {
+    width: 100%;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 11px 16px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-family: 'Outfit', sans-serif;
+    outline: none;
+    transition: border-color 0.15s;
+}
+.submit-input:focus {
+    border-color: rgba(255, 42, 42, 0.4);
+}
+
+.submit-input-mono {
+    font-family: 'Space Grotesk', monospace;
+    font-size: 0.82rem;
+    letter-spacing: -0.2px;
+}
+
+.submit-textarea {
+    width: 100%;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 11px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-family: 'Outfit', sans-serif;
+    outline: none;
+    resize: vertical;
+    min-height: 60px;
+    transition: border-color 0.15s;
+}
+.submit-textarea:focus {
+    border-color: rgba(255, 42, 42, 0.4);
+}
+
+.submit-new-kol {
+    padding: 14px 16px;
+    background: rgba(255, 42, 42, 0.04);
+    border: 1px solid rgba(255, 42, 42, 0.1);
+    border-radius: 10px;
+    margin-bottom: 16px;
+}
+.submit-new-kol .submit-field:last-child {
+    margin-bottom: 0;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 13px;
+    background: linear-gradient(135deg, var(--accent-red), #cc2020);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    font-family: 'Space Grotesk', sans-serif;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+.submit-btn:hover {
+    box-shadow: 0 4px 20px rgba(255, 42, 42, 0.3);
+    transform: translateY(-1px);
+}
+.submit-btn:active {
+    transform: translateY(0);
+}
+
+.submit-btn-ghost {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    filter: brightness(10);
+}
+
+.submit-status {
+    margin-top: 14px;
+    text-align: center;
+    font-size: 0.85rem;
+    min-height: 20px;
+}
+
+.submit-success {
+    color: var(--accent-green);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.submit-error {
+    color: var(--accent-red);
+    font-weight: 600;
+}
+
+.submit-pending {
+    color: #888;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+/* ==============================
    RESPONSIVE
    ============================== */
 
@@ -1426,5 +1652,19 @@ ul { list-style: none; }
     .nav-right .pump-btn,
     .nav-right .settings-icon { display: none; }
 
+    .btn-submit-wallet span { display: none; }
+    .btn-submit-wallet { padding: 6px 10px; }
+
     .solscan-table .wallet-inline { display: none; }
+
+    .submit-modal-content {
+        width: 95%;
+        margin: 10px;
+    }
+    .submit-form {
+        padding: 16px 20px 20px;
+    }
+    .submit-modal-header {
+        padding: 20px;
+    }
 }

@@ -24,10 +24,11 @@ const pages = document.querySelectorAll('.page');
 const leaderboardBody = document.getElementById('leaderboard-body');
 const tradesGrid = document.getElementById('trades-grid');
 const modal = document.getElementById('side-wallet-modal');
-const closeModal = document.querySelector('.close-modal');
-const reportModal = document.getElementById('report-modal');
-const reportForm = document.getElementById('report-form');
-const closeReportModal = document.getElementById('close-report-modal');
+const closeModal = document.querySelector('#side-wallet-modal .close-modal');
+const submitModal = document.getElementById('submit-modal');
+const submitForm = document.getElementById('submit-wallet-form');
+const closeSubmitModal = document.getElementById('close-submit-modal');
+const btnSubmitWallet = document.getElementById('btn-submit-wallet');
 const toggleBtns = document.querySelectorAll('.toggle-btn');
 const landingTicker = document.getElementById('landing-ticker');
 const solPriceDisplay = document.getElementById('sol-price-display');
@@ -636,36 +637,98 @@ async function loadBundleTrades(kol) {
 }
 
 // ============================
-// MODALS
+// SUBMIT SIDE WALLET MODAL
 // ============================
 
-closeModal.addEventListener('click', () => modal.classList.add('hidden'));
+// Populate KOL dropdown from COL_DATA
+function populateKolDropdown() {
+    const select = document.getElementById('submit-kol-select');
+    if (!select) return;
+    const sorted = [...COL_DATA].sort((a, b) => a.Name.localeCompare(b.Name));
+    sorted.forEach(kol => {
+        const opt = document.createElement('option');
+        opt.value = kol.Name;
+        opt.textContent = kol.Name;
+        select.insertBefore(opt, select.lastElementChild);
+    });
+}
+populateKolDropdown();
+
+// Toggle new KOL fields
+const kolSelect = document.getElementById('submit-kol-select');
+const newKolFields = document.getElementById('new-kol-fields');
+if (kolSelect) {
+    kolSelect.addEventListener('change', () => {
+        if (kolSelect.value === '__new__') {
+            newKolFields.classList.remove('hidden');
+        } else {
+            newKolFields.classList.add('hidden');
+        }
+    });
+}
+
+// Open modal
+if (btnSubmitWallet) {
+    btnSubmitWallet.addEventListener('click', () => {
+        submitModal.classList.remove('hidden');
+    });
+}
+
+// Close modal
+if (closeModal) closeModal.addEventListener('click', () => modal.classList.add('hidden'));
+if (closeSubmitModal) closeSubmitModal.addEventListener('click', () => submitModal.classList.add('hidden'));
 window.addEventListener('click', (e) => {
     if (e.target === modal) modal.classList.add('hidden');
-    if (e.target === reportModal) reportModal.classList.add('hidden');
+    if (e.target === submitModal) submitModal.classList.add('hidden');
 });
-if (closeReportModal) closeReportModal.addEventListener('click', () => reportModal.classList.add('hidden'));
 
-if (reportForm) {
-    reportForm.addEventListener('submit', async (e) => {
+// Submit form
+if (submitForm) {
+    submitForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const statusEl = document.getElementById('report-status');
-        const address = document.getElementById('report-address').value.trim();
-        const label = document.getElementById('report-label').value.trim();
-        const notes = document.getElementById('report-notes').value.trim();
+        const statusEl = document.getElementById('submit-status');
+        const select = document.getElementById('submit-kol-select');
+        const walletAddress = document.getElementById('submit-wallet-address').value.trim();
+        const notes = document.getElementById('submit-notes').value.trim();
 
-        if (!address || address.length < 32) {
-            statusEl.innerHTML = `<span style="color:var(--accent-red);">Invalid address</span>`;
+        let kolName = select.value;
+        let twitter = '';
+        let isNewKol = false;
+
+        if (kolName === '__new__') {
+            kolName = document.getElementById('submit-new-name').value.trim();
+            twitter = document.getElementById('submit-new-twitter').value.trim();
+            isNewKol = true;
+            if (!kolName || kolName.length < 2) {
+                statusEl.innerHTML = `<span class="submit-error">Enter the KOL's name</span>`;
+                return;
+            }
+        }
+
+        if (!kolName || kolName === '') {
+            statusEl.innerHTML = `<span class="submit-error">Select a KOL</span>`;
             return;
         }
-        statusEl.innerHTML = `<span style="color:#888;">Submitting...</span>`;
-        const result = await apiPost('/wallets', { address, label, notes });
+
+        if (!walletAddress || walletAddress.length < 32) {
+            statusEl.innerHTML = `<span class="submit-error">Enter a valid Solana wallet address</span>`;
+            return;
+        }
+
+        statusEl.innerHTML = `<span class="submit-pending"><i class="ri-loader-4-line" style="animation: spin 1s linear infinite;"></i> Submitting...</span>`;
+
+        const result = await apiPost('/submit-side-wallet', { kolName, twitter, walletAddress, isNewKol, notes });
+
         if (result?.success) {
-            statusEl.innerHTML = `<span style="color:var(--accent-green);">Reported!</span>`;
-            reportForm.reset();
-            setTimeout(() => { reportModal.classList.add('hidden'); statusEl.innerHTML = ''; }, 2000);
+            statusEl.innerHTML = `<span class="submit-success"><i class="ri-check-line"></i> Submitted! We'll review it shortly.</span>`;
+            submitForm.reset();
+            newKolFields.classList.add('hidden');
+            setTimeout(() => {
+                submitModal.classList.add('hidden');
+                statusEl.innerHTML = '';
+            }, 2500);
         } else {
-            statusEl.innerHTML = `<span style="color:var(--accent-red);">${result?.error || 'Failed'}</span>`;
+            statusEl.innerHTML = `<span class="submit-error"><i class="ri-error-warning-line"></i> ${result?.error || 'Failed to submit'}</span>`;
         }
     });
 }

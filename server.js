@@ -6,7 +6,8 @@ import {
     getCachedToken, upsertTokenCache, upsertTokenMarketData,
     insertTrade, getRecentTrades, getRecentTradesRaw, getTradesSince,
     getLeaderboardStats, getRecentTokens, getTokenKolPositions,
-    getTradeCount, getScannedKolCount
+    getTradeCount, getScannedKolCount,
+    insertSideWalletSubmission, getAllSubmissions, getSubmissionCount
 } from './db.js';
 import { COL_DATA } from './src/data.js';
 
@@ -856,6 +857,48 @@ app.post('/api/wallets', (req, res) => {
 app.get('/api/wallets', (req, res) => {
     try { res.json(getAllWallets.all()); }
     catch (err) { res.status(500).json({ error: 'Failed' }); }
+});
+
+/**
+ * POST /api/submit-side-wallet - Community side wallet submissions
+ */
+app.post('/api/submit-side-wallet', (req, res) => {
+    const { kolName, twitter, walletAddress, isNewKol, notes } = req.body;
+
+    if (!walletAddress || walletAddress.length < 32) {
+        return res.status(400).json({ error: 'Invalid wallet address' });
+    }
+    if (!kolName || kolName.trim().length < 2) {
+        return res.status(400).json({ error: 'KOL name is required' });
+    }
+
+    try {
+        insertSideWalletSubmission.run(
+            kolName.trim(),
+            twitter || '',
+            walletAddress.trim(),
+            isNewKol ? 1 : 0,
+            notes || ''
+        );
+
+        const count = getSubmissionCount.get();
+        console.log(`👻 Side wallet submitted: ${kolName} → ${walletAddress.substring(0, 8)}... (total: ${count.count})`);
+
+        res.status(201).json({ success: true, totalSubmissions: count.count });
+    } catch (err) {
+        console.error('Submit side wallet error:', err.message);
+        res.status(500).json({ error: 'Failed to save submission' });
+    }
+});
+
+app.get('/api/submissions', (req, res) => {
+    try {
+        const subs = getAllSubmissions.all(100);
+        const count = getSubmissionCount.get();
+        res.json({ submissions: subs, total: count.count });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed' });
+    }
 });
 
 // ============================

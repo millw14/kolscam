@@ -56,6 +56,20 @@ try { db.exec('ALTER TABLE token_cache ADD COLUMN mcap REAL DEFAULT 0'); } catch
 try { db.exec('ALTER TABLE token_cache ADD COLUMN price_usd REAL DEFAULT 0'); } catch(e) { /* already exists */ }
 try { db.exec('ALTER TABLE token_cache ADD COLUMN price_change_24h REAL DEFAULT 0'); } catch(e) { /* already exists */ }
 
+// --- Side wallet submissions table ---
+db.exec(`
+  CREATE TABLE IF NOT EXISTS side_wallet_submissions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kol_name TEXT NOT NULL,
+    twitter TEXT DEFAULT '',
+    wallet_address TEXT NOT NULL,
+    is_new_kol INTEGER DEFAULT 0,
+    notes TEXT DEFAULT '',
+    status TEXT DEFAULT 'pending',
+    submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+`);
+
 // --- Create indexes that depend on new columns (after migration) ---
 try { db.exec('CREATE INDEX IF NOT EXISTS idx_kol_trades_token_mint ON kol_trades(token_mint)'); } catch(e) { /* */ }
 try { db.exec('CREATE INDEX IF NOT EXISTS idx_kol_trades_action ON kol_trades(action)'); } catch(e) { /* */ }
@@ -196,6 +210,20 @@ const getTradeCount = db.prepare(`SELECT COUNT(*) as count FROM kol_trades WHERE
 // Count unique KOLs scanned
 const getScannedKolCount = db.prepare(`SELECT COUNT(DISTINCT wallet) as count FROM kol_trades`);
 
+// --- Side Wallet Submissions ---
+const insertSideWalletSubmission = db.prepare(`
+  INSERT INTO side_wallet_submissions (kol_name, twitter, wallet_address, is_new_kol, notes)
+  VALUES (?, ?, ?, ?, ?)
+`);
+
+const getAllSubmissions = db.prepare(`
+  SELECT * FROM side_wallet_submissions ORDER BY submitted_at DESC LIMIT ?
+`);
+
+const getSubmissionCount = db.prepare(`
+  SELECT COUNT(*) as count FROM side_wallet_submissions
+`);
+
 export {
   db,
   insertWallet,
@@ -212,5 +240,8 @@ export {
   getRecentTokens,
   getTokenKolPositions,
   getTradeCount,
-  getScannedKolCount
+  getScannedKolCount,
+  insertSideWalletSubmission,
+  getAllSubmissions,
+  getSubmissionCount
 };

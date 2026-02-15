@@ -39,7 +39,10 @@
                     <span>Pump app</span>
                 </div>
                 <div class="search-icon"><i class="ri-search-line"></i></div>
-                <button class="btn-connect">Connect Wallet</button>
+                <button class="btn-submit-wallet" id="btn-submit-wallet">
+                    <img src="/sidewallet.png" class="btn-ghost-icon" />
+                    <span>Submit Side Wallet</span>
+                </button>
                 <div class="settings-icon"><i class="ri-settings-3-line"></i></div>
             </div>
         </nav>
@@ -174,44 +177,56 @@
             </div>
         </div>
 
-        <!-- Report/Submit Wallet Modal -->
-        <div id="report-modal" class="modal hidden">
-            <div class="modal-content" style="max-width:450px;">
-                <span class="close-modal" id="close-report-modal">&times;</span>
-                <div class="profile-header" style="padding:24px;">
-                    <div class="profile-name" style="margin-bottom:0;"><i class="ri-alarm-warning-line"
-                            style="color:var(--accent-red);margin-right:8px;"></i> Report Bundle Wallet</div>
+        <!-- Submit Side Wallet Modal -->
+        <div id="submit-modal" class="modal hidden">
+            <div class="modal-content submit-modal-content">
+                <span class="close-modal" id="close-submit-modal">&times;</span>
+                <div class="submit-modal-header">
+                    <img src="/sidewallet.png" class="submit-modal-ghost" />
+                    <div>
+                        <h3 class="submit-modal-title">Report a Side Wallet</h3>
+                        <p class="submit-modal-subtitle">Help the community expose bundle wallets</p>
+                    </div>
                 </div>
-                <div class="bundle-section" style="padding:20px 24px;">
-                    <form id="report-form">
-                        <div style="margin-bottom:16px;">
-                            <label
-                                style="display:block; font-size:0.8rem; color:#888; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">Wallet
-                                Address *</label>
-                            <input type="text" id="report-address" placeholder="Enter Solana wallet address" required
-                                style="width:100%; background:var(--bg-card); border:1px solid var(--border-color); color:var(--text-primary); padding:12px 16px; border-radius:8px; font-size:0.9rem; font-family:'Space Grotesk',sans-serif; outline:none;" />
+                <form id="submit-wallet-form" class="submit-form">
+                    <div class="submit-field">
+                        <label class="submit-label">Select KOL *</label>
+                        <div class="submit-select-wrapper">
+                            <select id="submit-kol-select" class="submit-select">
+                                <option value="">-- Choose a KOL --</option>
+                                <!-- JS populated from COL_DATA -->
+                                <option value="__new__">+ Add New KOL</option>
+                            </select>
                         </div>
-                        <div style="margin-bottom:16px;">
-                            <label
-                                style="display:block; font-size:0.8rem; color:#888; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">Label
-                                (Optional)</label>
-                            <input type="text" id="report-label" placeholder="e.g. Suspected insider"
-                                style="width:100%; background:var(--bg-card); border:1px solid var(--border-color); color:var(--text-primary); padding:12px 16px; border-radius:8px; font-size:0.9rem; outline:none;" />
+                    </div>
+
+                    <div id="new-kol-fields" class="submit-new-kol hidden">
+                        <div class="submit-field">
+                            <label class="submit-label">KOL Name *</label>
+                            <input type="text" id="submit-new-name" class="submit-input" placeholder="e.g. CryptoGuru" />
                         </div>
-                        <div style="margin-bottom:20px;">
-                            <label
-                                style="display:block; font-size:0.8rem; color:#888; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">Notes
-                                (Optional)</label>
-                            <textarea id="report-notes" placeholder="Additional details..." rows="3"
-                                style="width:100%; background:var(--bg-card); border:1px solid var(--border-color); color:var(--text-primary); padding:12px 16px; border-radius:8px; font-size:0.9rem; outline:none; resize:vertical; font-family:inherit;"></textarea>
+                        <div class="submit-field">
+                            <label class="submit-label">Twitter / X Link</label>
+                            <input type="text" id="submit-new-twitter" class="submit-input" placeholder="https://x.com/..." />
                         </div>
-                        <button type="submit"
-                            style="width:100%; padding:12px; background:var(--accent-red); color:white; border:none; border-radius:8px; font-weight:700; font-size:0.95rem; cursor:pointer; font-family:'Space Grotesk',sans-serif; transition:background 0.2s;">
-                            <i class="ri-send-plane-fill" style="margin-right:6px;"></i> Submit Report
-                        </button>
-                        <div id="report-status" style="margin-top:12px; text-align:center; font-size:0.85rem;"></div>
-                    </form>
-                </div>
+                    </div>
+
+                    <div class="submit-field">
+                        <label class="submit-label">Side Wallet Address *</label>
+                        <input type="text" id="submit-wallet-address" class="submit-input submit-input-mono" placeholder="Enter Solana wallet address" required />
+                    </div>
+
+                    <div class="submit-field">
+                        <label class="submit-label">Evidence / Notes <span class="submit-optional">(optional)</span></label>
+                        <textarea id="submit-notes" class="submit-textarea" placeholder="How did you find this? On-chain link, screenshot, etc..." rows="3"></textarea>
+                    </div>
+
+                    <button type="submit" class="submit-btn">
+                        <img src="/sidewallet.png" class="submit-btn-ghost" />
+                        Submit Report
+                    </button>
+                    <div id="submit-status" class="submit-status"></div>
+                </form>
             </div>
         </div>
 
