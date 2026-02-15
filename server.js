@@ -18,6 +18,14 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Catch uncaught exceptions so Railway logs show what went wrong
+process.on('uncaughtException', (err) => {
+    console.error('UNCAUGHT EXCEPTION:', err);
+});
+process.on('unhandledRejection', (err) => {
+    console.error('UNHANDLED REJECTION:', err);
+});
 const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
 const HELIUS_BASE = `https://api.helius.xyz`;
 
@@ -363,12 +371,12 @@ function isValidTrade(trade) {
 let scannerPhase = 'idle';
 let scanProgress = { done: 0, total: 0 };
 
-async function scanKolWallet(kol) {
+async function scanKolWallet(kol, txLimit = 10) {
     const wallet = kol['Wallet Address'];
     if (!wallet || wallet.length < 10) return 0;
 
     try {
-        const txs = await fetchEnhancedTransactions(wallet, 10);
+        const txs = await fetchEnhancedTransactions(wallet, txLimit);
         if (!txs || txs.length === 0) return 0;
 
         const mints = new Set();
@@ -409,21 +417,22 @@ async function scanKolWallet(kol) {
     }
 }
 
-async function runBackgroundScan() {
+async function runBackgroundScan(isBackfill = false) {
     if (scannerPhase === 'scanning') return;
     scannerPhase = 'scanning';
 
     const validKols = COL_DATA.filter(k => k['Wallet Address'] && k['Wallet Address'].length > 10);
     const shuffled = [...validKols].sort(() => Math.random() - 0.5);
+    const txLimit = isBackfill ? 50 : 10;
 
     scanProgress = { done: 0, total: shuffled.length };
-    console.log(`\n🔍 Background scan: ${shuffled.length} KOL wallets (10 txns each)...\n`);
+    console.log(`\n🔍 ${isBackfill ? 'INITIAL BACKFILL' : 'Background scan'}: ${shuffled.length} KOL wallets (${txLimit} txns each)...\n`);
 
     let totalSaved = 0;
 
     for (let i = 0; i < shuffled.length; i += 5) {
         const group = shuffled.slice(i, i + 5);
-        const results = await Promise.all(group.map(kol => scanKolWallet(kol)));
+        const results = await Promise.all(group.map(kol => scanKolWallet(kol, txLimit)));
         const groupSaved = results.reduce((a, b) => a + b, 0);
         totalSaved += groupSaved;
         scanProgress.done = Math.min(i + 5, shuffled.length);
@@ -868,7 +877,7 @@ app.get('/{*splat}', (req, res) => {
 // ============================
 // Start
 // ============================
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     const existing = getTradeCount.get();
     const kolCount = getScannedKolCount.get();
     console.log(`\n🚀 Kolscam API on port ${PORT}`);
@@ -889,8 +898,8 @@ app.listen(PORT, () => {
 
         // One-time backfill on first start if DB is sparse
         if (existing.count < 100) {
-            console.log(`📥 DB has only ${existing.count} trades — running initial backfill...`);
-            setTimeout(() => runBackgroundScan(), 2000);
+            console.log(`📥 DB has only ${existing.count} trades — running initial backfill (50 txns/KOL)...`);
+            setTimeout(() => runBackgroundScan(true), 2000);
         }
 
         // Background scan every 6 hours

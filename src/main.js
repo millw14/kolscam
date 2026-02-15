@@ -13,6 +13,8 @@ const APP_STATE = {
     tickerInterval: null,
     leaderboardRefreshInterval: null,
     tokensRefreshInterval: null,
+    profileKol: null,
+    profileTab: 'main',
 };
 
 // --- DOM Elements ---
@@ -38,6 +40,15 @@ function navigateTo(pageId) {
     if (pageId === 'trades') renderTrades();
     if (pageId === 'leaderboard') fetchLeaderboard(APP_STATE.leaderboardPeriod);
     if (pageId === 'tokens') fetchTokens();
+    if (pageId === 'profile' && APP_STATE.profileKol) renderProfile(APP_STATE.profileKol);
+}
+
+function openProfile(kolName) {
+    const kol = COL_DATA.find(k => k.Name.toLowerCase() === kolName.toLowerCase());
+    if (!kol) return;
+    APP_STATE.profileKol = kol.Name;
+    APP_STATE.profileTab = 'main';
+    navigateTo('profile');
 }
 
 navLinks.forEach(link => {
@@ -238,8 +249,7 @@ function renderLeaderboard(leaderboard, meta) {
 
         tr.addEventListener('click', (e) => {
             if (e.target.closest('a')) return;
-            const kol = COL_DATA.find(k => k['Wallet Address'] === entry.wallet);
-            if (kol) openProfileModal(kol, entry, `${pnlSign}${formatSol(Math.abs(entry.pnl))} Sol`);
+            openProfile(entry.name);
         });
 
         leaderboardBody.appendChild(tr);
@@ -305,11 +315,13 @@ async function renderTrades() {
             ? `<a href="https://trade.padre.gg/trade/solana/${trade.tokenMint}" target="_blank" class="trade-token token-link">${trade.tokenSymbol}</a>`
             : `<span class="trade-token">${trade.tokenSymbol}</span>`;
 
+        const sideTag = trade.isSideWallet ? '<i class="ri-git-branch-line side-badge" title="Bundle wallet"></i>' : '';
+
         card.innerHTML = `
       <div class="trade-header">
         <img src="${trade.kolAvatar || '/logo.png'}" class="trade-avatar" alt="${trade.kolName}" onerror="this.src='/logo.png'" />
         <div class="trade-content">
-          <span class="trade-name">${trade.kolName}</span>
+          <span class="trade-name kol-link" data-kol="${trade.kolName}">${trade.kolName}${sideTag}</span>
           <span class="trade-verb ${actionClass}">${actionVerb}</span>
           <span class="trade-sol ${actionClass}">${formatSol(trade.amountSol)} sol</span>
           <span class="trade-token-amount">${tokenAmtStr}</span>
@@ -422,51 +434,203 @@ function renderTokenColumn(containerId, tokens) {
 }
 
 // ============================
-// PROFILE MODAL
+// PROFILE PAGE
 // ============================
 
-function openProfileModal(kol, entry, pnlStr) {
-    const modalContent = modal.querySelector('.modal-content');
+async function renderProfile(kolName) {
+    const kol = COL_DATA.find(k => k.Name === kolName);
+    if (!kol) return;
 
-    modalContent.innerHTML = `
-        <span class="close-modal">&times;</span>
-        <div class="profile-header">
-            <img src="${kol.Avatar || '/logo.png'}" class="profile-avatar" alt="${kol.Name}" />
+    const profileHeader = document.getElementById('profile-header');
+    const profileStats = document.getElementById('profile-stats');
+    const profileWallets = document.getElementById('profile-wallets');
+    const profileTrades = document.getElementById('profile-trades');
+
+    // Back button
+    const backBtn = document.getElementById('profile-back-btn');
+    backBtn.onclick = (e) => { e.preventDefault(); navigateTo('leaderboard'); };
+
+    const shortWallet = kol['Wallet Address'].substring(0, 8) + '...' + kol['Wallet Address'].slice(-6);
+
+    // Header
+    profileHeader.innerHTML = `
+        <img src="${kol.Avatar || '/logo.png'}" class="profile-avatar" alt="${kol.Name}" onerror="this.src='/logo.png'" />
+        <div class="profile-info">
             <div class="profile-name">
                 ${kol.Name}
-                ${kol['Twitter Handle'] ? `<a href="${kol['Twitter Handle']}" target="_blank" class="social-link"><i class="ri-twitter-x-fill" style="font-size:1.2rem;"></i></a>` : ''}
+                ${kol['Twitter Handle'] ? `<a href="${kol['Twitter Handle']}" target="_blank" class="social-link"><i class="ri-twitter-x-fill" style="font-size:1.1rem;"></i></a>` : ''}
             </div>
-            <div class="profile-stats">
-                <div class="stat-item">
-                    <span class="stat-value" style="color:var(--accent-green);">${entry.buyCount || 0}</span>
-                    <span class="stat-label">Buys</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value" style="color:var(--accent-red);">${entry.sellCount || 0}</span>
-                    <span class="stat-label">Sells</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value">${pnlStr}</span>
-                    <span class="stat-label">PnL</span>
-                </div>
-            </div>
-        </div>
-        <div class="bundle-section">
-            <div class="section-title"><span>WALLET</span></div>
-            <div class="bundle-list">
-                <div class="bundle-item">
-                    <div class="bundle-wallet">
-                        <i class="ri-wallet-3-line"></i>
-                        <span>${entry.wallet}</span>
-                    </div>
-                    <i class="ri-file-copy-line copy-icon" data-copy="${entry.wallet}" style="opacity:1;cursor:pointer;"></i>
-                </div>
+            <div class="profile-wallet">
+                <span>${shortWallet}</span>
+                <i class="ri-file-copy-line copy-icon" data-copy="${kol['Wallet Address']}"></i>
             </div>
         </div>
     `;
 
-    modalContent.querySelector('.close-modal').addEventListener('click', () => modal.classList.add('hidden'));
-    modal.classList.remove('hidden');
+    // Stats - fetch from leaderboard
+    profileStats.innerHTML = `<div class="profile-empty"><i class="ri-loader-4-line" style="animation: spin 1s linear infinite;"></i></div>`;
+
+    const lbData = await apiFetch(`/leaderboard?period=${APP_STATE.leaderboardPeriod}`);
+    let entry = null;
+    if (lbData?.leaderboard) {
+        entry = lbData.leaderboard.find(e => e.wallet === kol['Wallet Address']);
+    }
+
+    if (entry) {
+        const pnlClass = entry.pnl >= 0 ? 'positive' : 'negative';
+        const pnlSign = entry.pnl >= 0 ? '+' : '';
+        const pnlUsd = formatUsd(Math.abs(entry.pnlUsd || entry.pnl * APP_STATE.solPrice));
+
+        profileStats.innerHTML = `
+            <div class="profile-stat">
+                <span class="profile-stat-value positive">${entry.buyCount || 0}</span>
+                <span class="profile-stat-label">Buys</span>
+            </div>
+            <div class="profile-stat">
+                <span class="profile-stat-value negative">${entry.sellCount || 0}</span>
+                <span class="profile-stat-label">Sells</span>
+            </div>
+            <div class="profile-stat">
+                <span class="profile-stat-value ${pnlClass}">${pnlSign}${formatSol(Math.abs(entry.pnl))} Sol</span>
+                <span class="profile-stat-label">PnL</span>
+            </div>
+            <div class="profile-stat">
+                <span class="profile-stat-value ${pnlClass}">$${pnlUsd}</span>
+                <span class="profile-stat-label">USD</span>
+            </div>
+        `;
+    } else {
+        profileStats.innerHTML = `
+            <div class="profile-stat">
+                <span class="profile-stat-value">--</span>
+                <span class="profile-stat-label">Buys</span>
+            </div>
+            <div class="profile-stat">
+                <span class="profile-stat-value">--</span>
+                <span class="profile-stat-label">Sells</span>
+            </div>
+            <div class="profile-stat">
+                <span class="profile-stat-value">--</span>
+                <span class="profile-stat-label">PnL</span>
+            </div>
+        `;
+    }
+
+    // Wallets section
+    const sideWallets = (kol['Side Wallets'] || []).filter(
+        sw => sw && sw.length > 10 && sw !== kol['Wallet Address']
+    );
+
+    let walletsHtml = `<div class="wallets-title">Wallets</div>`;
+    walletsHtml += `
+        <div class="wallet-row">
+            <div class="wallet-row-left">
+                <i class="ri-wallet-3-line wallet-main-icon"></i>
+                <span>${kol['Wallet Address'].substring(0, 12)}...${kol['Wallet Address'].slice(-8)}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span class="wallet-tag main">Main</span>
+                <i class="ri-file-copy-line copy-icon" data-copy="${kol['Wallet Address']}" style="cursor:pointer;color:#666;font-size:0.85rem;"></i>
+            </div>
+        </div>
+    `;
+
+    sideWallets.forEach(sw => {
+        walletsHtml += `
+            <div class="wallet-row">
+                <div class="wallet-row-left">
+                    <i class="ri-git-branch-line wallet-side-icon"></i>
+                    <span>${sw.substring(0, 12)}...${sw.slice(-8)}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="wallet-tag bundle">Bundle</span>
+                    <i class="ri-file-copy-line copy-icon" data-copy="${sw}" style="cursor:pointer;color:#666;font-size:0.85rem;"></i>
+                </div>
+            </div>
+        `;
+    });
+
+    if (sideWallets.length === 0) {
+        walletsHtml += `<div style="color:#555;font-size:0.8rem;padding:8px 12px;">No bundle wallets tracked</div>`;
+    }
+
+    profileWallets.innerHTML = walletsHtml;
+
+    // Tab handlers
+    const tabs = document.querySelectorAll('.profile-tab');
+    tabs.forEach(tab => {
+        tab.onclick = () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            APP_STATE.profileTab = tab.dataset.tab;
+            if (tab.dataset.tab === 'main') {
+                loadMainWalletTrades(kol);
+            } else {
+                loadBundleTrades(kol);
+            }
+        };
+    });
+
+    // Load main wallet trades by default
+    loadMainWalletTrades(kol);
+}
+
+async function loadMainWalletTrades(kol) {
+    const profileTrades = document.getElementById('profile-trades');
+    profileTrades.innerHTML = `<div class="profile-empty"><i class="ri-loader-4-line" style="animation: spin 1s linear infinite;"></i> Loading trades...</div>`;
+
+    const data = await apiFetch(`/trades/${kol['Wallet Address']}?limit=50`);
+
+    if (!data || !data.trades || data.trades.length === 0) {
+        profileTrades.innerHTML = `<div class="profile-empty">No trades recorded yet</div>`;
+        return;
+    }
+
+    profileTrades.innerHTML = '';
+    data.trades.forEach(trade => {
+        const row = document.createElement('div');
+        row.className = 'profile-trade-row';
+        const actionClass = trade.action.toLowerCase();
+
+        row.innerHTML = `
+            <span class="profile-trade-action ${actionClass}">${trade.action}</span>
+            <span class="profile-trade-token">${trade.tokenSymbol}</span>
+            <span class="profile-trade-amount">${formatTokenAmount(trade.tokenAmount)}</span>
+            <span class="profile-trade-sol">${formatSol(trade.amountSol)} Sol</span>
+            <span class="profile-trade-time">${timeAgo(trade.timestamp)}</span>
+        `;
+        profileTrades.appendChild(row);
+    });
+}
+
+async function loadBundleTrades(kol) {
+    const profileTrades = document.getElementById('profile-trades');
+    profileTrades.innerHTML = `<div class="profile-empty"><i class="ri-loader-4-line" style="animation: spin 1s linear infinite;"></i> Loading bundle trades...</div>`;
+
+    const data = await apiFetch(`/kol/${encodeURIComponent(kol.Name)}/sides`);
+
+    if (!data || !data.trades || data.trades.length === 0) {
+        profileTrades.innerHTML = `<div class="profile-empty">No bundle wallet trades recorded yet</div>`;
+        return;
+    }
+
+    profileTrades.innerHTML = '';
+    data.trades.forEach(trade => {
+        const row = document.createElement('div');
+        row.className = 'profile-trade-row';
+        const actionClass = trade.action.toLowerCase();
+        const shortWallet = trade.wallet ? trade.wallet.substring(0, 6) + '...' : '';
+
+        row.innerHTML = `
+            <span class="profile-trade-action ${actionClass}">${trade.action}</span>
+            <span class="profile-trade-token">${trade.tokenSymbol}</span>
+            <span class="profile-trade-amount">${formatTokenAmount(trade.tokenAmount)}</span>
+            <span class="profile-trade-sol">${formatSol(trade.amountSol)} Sol</span>
+            <span class="profile-trade-wallet-tag" title="${trade.wallet || ''}">${shortWallet}</span>
+            <span class="profile-trade-time">${timeAgo(trade.timestamp)}</span>
+        `;
+        profileTrades.appendChild(row);
+    });
 }
 
 // ============================
@@ -542,9 +706,11 @@ async function fetchTickerTrades() {
                 ? `<a href="https://trade.padre.gg/trade/solana/${trade.tokenMint}" target="_blank" class="ticker-token token-link">${trade.tokenSymbol}</a>`
                 : `<span class="ticker-token">${trade.tokenSymbol}</span>`;
 
+            const tickerSideTag = trade.isSideWallet ? '<i class="ri-git-branch-line side-badge" title="Bundle wallet"></i>' : '';
+
             div.innerHTML = `
                 <img src="${trade.kolAvatar || '/logo.png'}" class="ticker-kol-img" onerror="this.src='/logo.png'" />
-                <span class="ticker-name">${trade.kolName}</span>
+                <span class="ticker-name kol-link" data-kol="${trade.kolName}">${trade.kolName}${tickerSideTag}</span>
                 <span class="ticker-verb">${actionVerb}</span>
                 <span class="ticker-sol ${actionClass}">${formatSol(trade.amountSol)} sol</span>
                 <span class="ticker-token-amt">${tokenAmtStr}</span>
@@ -631,6 +797,7 @@ if (heroSearchInput) heroSearchInput.addEventListener('keypress', e => { if (e.k
 // ============================
 
 document.addEventListener('click', (e) => {
+    // Copy wallet
     const icon = e.target.closest('.copy-icon');
     if (icon?.dataset.copy) {
         navigator.clipboard.writeText(icon.dataset.copy).then(() => {
@@ -638,6 +805,14 @@ document.addEventListener('click', (e) => {
             icon.style.color = 'var(--accent-green)';
             setTimeout(() => { icon.classList.replace('ri-check-line', 'ri-file-copy-line'); icon.style.color = ''; }, 1500);
         });
+        return;
+    }
+
+    // Clickable KOL names -> profile
+    const kolLink = e.target.closest('.kol-link');
+    if (kolLink?.dataset.kol) {
+        e.preventDefault();
+        openProfile(kolLink.dataset.kol);
     }
 });
 

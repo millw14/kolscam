@@ -1019,6 +1019,338 @@ ul { list-style: none; }
 }
 
 /* ==============================
+   SIDE WALLET BADGE
+   ============================== */
+
+.side-badge {
+    font-size: 0.7rem;
+    color: #f59e0b;
+    margin-left: 4px;
+    vertical-align: middle;
+    opacity: 0.85;
+}
+
+.kol-link {
+    cursor: pointer;
+    transition: color 0.15s;
+}
+.kol-link:hover {
+    color: var(--accent-red);
+}
+
+/* ==============================
+   PROFILE PAGE
+   ============================== */
+
+.profile-page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+.profile-back {
+    padding: 16px 0 8px;
+}
+.profile-back a {
+    color: #888;
+    text-decoration: none;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.15s;
+}
+.profile-back a:hover {
+    color: var(--text-primary);
+}
+
+.profile-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 16px;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.profile-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border: 3px solid var(--border-color);
+    object-fit: cover;
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.profile-name {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.profile-wallet {
+    font-size: 0.78rem;
+    color: #666;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Space Grotesk', monospace;
+}
+.profile-wallet .copy-icon {
+    cursor: pointer;
+    font-size: 0.85rem;
+    opacity: 0.6;
+    transition: opacity 0.15s;
+}
+.profile-wallet .copy-icon:hover {
+    opacity: 1;
+}
+
+.profile-stats-row {
+    display: flex;
+    gap: 0;
+    border-top: 1px solid var(--border-color);
+    padding-top: 16px;
+}
+
+.profile-stat {
+    flex: 1;
+    text-align: center;
+    padding: 0 12px;
+    border-right: 1px solid var(--border-color);
+}
+.profile-stat:last-child {
+    border-right: none;
+}
+
+.profile-stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: block;
+}
+.profile-stat-value.positive { color: var(--accent-green); }
+.profile-stat-value.negative { color: var(--accent-red); }
+
+.profile-stat-label {
+    font-size: 0.7rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+    display: block;
+}
+
+/* Wallets Card */
+
+.profile-wallets-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.wallets-title {
+    font-size: 0.75rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.wallet-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.02);
+    margin-bottom: 6px;
+    font-family: 'Space Grotesk', monospace;
+    font-size: 0.8rem;
+}
+.wallet-row:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+.wallet-row-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #aaa;
+    min-width: 0;
+}
+.wallet-row-left span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wallet-main-icon {
+    color: var(--accent-green);
+    font-size: 0.9rem;
+}
+.wallet-side-icon {
+    color: #f59e0b;
+    font-size: 0.9rem;
+}
+
+.wallet-tag {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+}
+.wallet-tag.main {
+    background: rgba(0,200,117,0.1);
+    color: var(--accent-green);
+}
+.wallet-tag.bundle {
+    background: rgba(245,158,11,0.1);
+    color: #f59e0b;
+}
+
+/* Profile Tabs */
+
+.profile-trades-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 40px;
+}
+
+.profile-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.profile-tab {
+    flex: 1;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Space Grotesk', sans-serif;
+    position: relative;
+}
+.profile-tab:hover {
+    color: var(--text-primary);
+    background: rgba(255,255,255,0.02);
+}
+.profile-tab.active {
+    color: var(--text-primary);
+}
+.profile-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 16px;
+    right: 16px;
+    height: 2px;
+    background: var(--accent-red);
+    border-radius: 2px 2px 0 0;
+}
+
+.profile-trades-list {
+    padding: 12px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.profile-trade-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    transition: background 0.1s;
+}
+.profile-trade-row:hover {
+    background: rgba(255,255,255,0.03);
+}
+
+.profile-trade-action {
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+.profile-trade-action.buy {
+    color: var(--accent-green);
+    background: rgba(0,200,117,0.1);
+}
+.profile-trade-action.sell {
+    color: var(--accent-red);
+    background: rgba(255,42,42,0.1);
+}
+
+.profile-trade-token {
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 60px;
+}
+
+.profile-trade-amount {
+    color: #aaa;
+    flex: 1;
+}
+
+.profile-trade-sol {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.profile-trade-time {
+    color: #555;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    min-width: 40px;
+    text-align: right;
+}
+
+.profile-trade-wallet-tag {
+    font-size: 0.6rem;
+    color: #f59e0b;
+    background: rgba(245,158,11,0.1);
+    padding: 2px 5px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.profile-empty {
+    text-align: center;
+    color: #555;
+    padding: 40px 20px;
+    font-size: 0.85rem;
+}
+
+/* ==============================
    RESPONSIVE
    ============================== */
 
