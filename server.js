@@ -403,8 +403,7 @@ function isValidTrade(trade) {
 let scannerPhase = 'idle';
 let scanProgress = { done: 0, total: 0 };
 
-async function scanKolWallet(kol, txLimit = 10) {
-    const wallet = kol['Wallet Address'];
+async function scanSingleWallet(wallet, kolName, kolAvatar, txLimit = 10) {
     if (!wallet || wallet.length < 10) return 0;
 
     try {
@@ -423,7 +422,7 @@ async function scanKolWallet(kol, txLimit = 10) {
 
         let saved = 0;
         for (const tx of txs) {
-            const trade = parseTransaction(tx, kol.Name, kol.Avatar, wallet, tokenMeta);
+            const trade = parseTransaction(tx, kolName, kolAvatar, wallet, tokenMeta);
 
             if (isValidTrade(trade) && trade.signature) {
                 try {
@@ -447,6 +446,22 @@ async function scanKolWallet(kol, txLimit = 10) {
     } catch (err) {
         return 0;
     }
+}
+
+async function scanKolWallet(kol, txLimit = 10) {
+    let total = 0;
+    // Scan main wallet
+    total += await scanSingleWallet(kol['Wallet Address'], kol.Name, kol.Avatar, txLimit);
+    // Scan side wallets too (with smaller limit to save credits)
+    if (Array.isArray(kol['Side Wallets'])) {
+        const sideLimit = Math.max(Math.floor(txLimit / 4), 5);
+        for (const sw of kol['Side Wallets']) {
+            if (sw && sw.length > 10 && sw !== kol['Wallet Address']) {
+                total += await scanSingleWallet(sw, kol.Name, kol.Avatar, sideLimit);
+            }
+        }
+    }
+    return total;
 }
 
 async function runBackgroundScan(isBackfill = false) {
@@ -649,22 +664,55 @@ app.get('/api/leaderboard', (req, res) => {
 
         const stats = getLeaderboardStats.all(since, 100);
 
-        const enriched = stats.map((row, idx) => {
-            const kol = WALLET_KOL_MAP[row.wallet];
+        // Build a map of KOLs that have trades in this period
+        const statsMap = {};
+        for (const row of stats) {
+            statsMap[row.kol_name] = row;
+        }
+
+        // Include ALL tracked KOLs, even those with 0 trades in period
+        const allKols = COL_DATA.map(kol => {
+            const row = statsMap[kol.Name];
+            if (row) {
+                return {
+                    wallet: row.wallet || kol['Wallet Address'],
+                    name: row.kol_name,
+                    avatar: row.kol_avatar || kol.Avatar || '/logo.png',
+                    twitter: kol['Twitter Handle'] || '',
+                    tradeCount: row.trade_count,
+                    buyCount: row.buy_count || 0,
+                    sellCount: row.sell_count || 0,
+                    pnl: parseFloat(row.pnl?.toFixed(2) || 0),
+                    pnlUsd: parseFloat((row.pnl * SOL_PRICE_USD).toFixed(1) || 0),
+                    winRate: parseFloat(row.win_rate?.toFixed(1) || 0),
+                };
+            }
             return {
-                rank: idx + 1,
-                wallet: row.wallet,
-                name: row.kol_name,
-                avatar: row.kol_avatar || WALLET_AVATAR_MAP[row.wallet] || '/logo.png',
-                twitter: kol?.['Twitter Handle'] || '',
-                tradeCount: row.trade_count,
-                buyCount: row.buy_count || 0,
-                sellCount: row.sell_count || 0,
-                pnl: parseFloat(row.pnl?.toFixed(2) || 0),
-                pnlUsd: parseFloat((row.pnl * SOL_PRICE_USD).toFixed(1) || 0),
-                winRate: parseFloat(row.win_rate?.toFixed(1) || 0),
+                wallet: kol['Wallet Address'],
+                name: kol.Name,
+                avatar: kol.Avatar || '/logo.png',
+                twitter: kol['Twitter Handle'] || '',
+                tradeCount: 0,
+                buyCount: 0,
+                sellCount: 0,
+                pnl: 0,
+                pnlUsd: 0,
+                winRate: 0,
             };
         });
+
+        // Sort: KOLs with trades first (by PnL desc), then inactive KOLs alphabetically
+        allKols.sort((a, b) => {
+            if (a.tradeCount > 0 && b.tradeCount === 0) return -1;
+            if (a.tradeCount === 0 && b.tradeCount > 0) return 1;
+            if (a.tradeCount > 0 && b.tradeCount > 0) return b.pnl - a.pnl;
+            return a.name.localeCompare(b.name);
+        });
+
+        const enriched = allKols.map((kol, idx) => ({
+            rank: idx + 1,
+            ...kol,
+        }));
 
         const totalTrades = getTradeCount.get();
         const totalKols = getScannedKolCount.get();
