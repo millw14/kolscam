@@ -293,9 +293,21 @@ function parseTransaction(tx, kolName, kolAvatar, walletAddress, tokenMetadataMa
         amountSol: 0,
     };
 
-    // Skip non-swap transactions early
-    if (tx.description && /transferred|compress|decompress|burn|mint|create|close/i.test(tx.description)) {
-        return null;
+    // Skip obviously non-trade transaction types
+    const NON_TRADE_TYPES = new Set([
+        'TRANSFER', 'BURN', 'BURN_NFT', 'COMPRESSED_NFT_MINT',
+        'COMPRESSED_NFT_TRANSFER', 'COMPRESSED_NFT_BURN',
+        'NFT_MINT', 'NFT_SALE', 'NFT_LISTING', 'NFT_CANCEL_LISTING',
+        'STAKE', 'UNSTAKE', 'INIT_BANK', 'SET_BANK_FLAGS',
+        'CLOSE_POSITION', 'WITHDRAW', 'DEPOSIT',
+    ]);
+    if (tx.type && NON_TRADE_TYPES.has(tx.type)) return null;
+
+    // Skip plain transfers (but don't over-filter — only exact starts)
+    if (tx.description) {
+        const d = tx.description.toLowerCase();
+        if (d.includes(' transferred ') && !d.includes('swap')) return null;
+        if (d.startsWith('burned ') || d.startsWith('close ') || d.startsWith('staked ')) return null;
     }
 
     // Helper: find first non-SOL mint from tokenTransfers
@@ -311,16 +323,33 @@ function parseTransaction(tx, kolName, kolAvatar, walletAddress, tokenMetadataMa
         }
     }
 
-    // Helper: resolve token symbol from metadata
+    // Helper: resolve token symbol from multiple sources
     function resolveSymbol(mint) {
         if (!mint || mint === SOL_MINT) return null;
+        // Source 1: metadata map from batch fetch
         const meta = tokenMetadataMap?.[mint];
-        return (meta && meta.symbol && meta.symbol.length <= 15) ? meta.symbol : null;
+        if (meta && meta.symbol && meta.symbol.length <= 15) return meta.symbol;
+        // Source 2: DB token_cache
+        try {
+            const cached = getCachedToken.get(mint);
+            if (cached && cached.symbol) return cached.symbol;
+        } catch { /* */ }
+        return null;
+    }
+
+    // Helper: extract symbol from description
+    function symbolFromDescription() {
+        if (!tx.description) return null;
+        const m = tx.description.match(/swapped\s+[\d,.]+\s+(\S+)\s+for\s+[\d,.]+\s+(\S+)/i);
+        if (m) {
+            const [, tok1, tok2] = m;
+            return tok1.toUpperCase() === 'SOL' ? tok2 : tok1;
+        }
+        return null;
     }
 
     // ============================================================
     // STRATEGY 0: Helius Swap Events (most accurate)
-    // Uses structured data from DEX program instruction parsing.
     // ============================================================
     const swap = tx.events?.swap;
     if (swap) {
@@ -330,40 +359,28 @@ function parseTransaction(tx, kolName, kolAvatar, walletAddress, tokenMetadataMa
         const tokenOut = swap.tokenOutputs?.find(t => t.mint !== SOL_MINT);
 
         if (nativeIn && nativeIn.amount > 0 && tokenOut) {
-            // Spent SOL, got tokens = Buy
             result.action = 'Buy';
             result.amountSol = parseFloat((nativeIn.amount / 1e9).toFixed(4));
             result.tokenMint = tokenOut.mint || primaryMint;
             result.tokenAmount = Math.abs(tokenOut.rawTokenAmount?.tokenAmount
                 ? tokenOut.rawTokenAmount.tokenAmount / Math.pow(10, tokenOut.rawTokenAmount.decimals || 0)
                 : tokenOut.tokenAmount || primaryTokenAmount);
-            result.tokenSymbol = resolveSymbol(result.tokenMint);
+            result.tokenSymbol = resolveSymbol(result.tokenMint) || symbolFromDescription();
         } else if (nativeOut && nativeOut.amount > 0 && tokenIn) {
-            // Sent tokens, got SOL = Sell
             result.action = 'Sell';
             result.amountSol = parseFloat((nativeOut.amount / 1e9).toFixed(4));
             result.tokenMint = tokenIn.mint || primaryMint;
             result.tokenAmount = Math.abs(tokenIn.rawTokenAmount?.tokenAmount
                 ? tokenIn.rawTokenAmount.tokenAmount / Math.pow(10, tokenIn.rawTokenAmount.decimals || 0)
                 : tokenIn.tokenAmount || primaryTokenAmount);
-            result.tokenSymbol = resolveSymbol(result.tokenMint);
+            result.tokenSymbol = resolveSymbol(result.tokenMint) || symbolFromDescription();
         }
 
-        if (result.action && result.amountSol > 0) {
-            // Fill symbol from description if metadata didn't have it
-            if (!result.tokenSymbol) {
-                const descMatch = tx.description?.match(/swapped\s+[\d,.]+\s+(\S+)\s+for\s+[\d,.]+\s+(\S+)/i);
-                if (descMatch) {
-                    const [, tok1, tok2] = descMatch;
-                    result.tokenSymbol = tok1.toUpperCase() === 'SOL' ? tok2 : tok1;
-                }
-            }
-            if (result.tokenSymbol) return result;
-        }
+        if (result.action && result.amountSol > 0 && result.tokenSymbol) return result;
     }
 
     // ============================================================
-    // STRATEGY 1: Parse Helius description (fallback)
+    // STRATEGY 1: Parse Helius description
     // Handles: "X swapped N SOL for M TOKEN"
     // ============================================================
     const swapMatch = tx.description?.match(/swapped\s+([\d,.]+)\s+(\S+)\s+for\s+([\d,.]+)\s+(\S+)/i);
@@ -380,6 +397,7 @@ function parseTransaction(tx, kolName, kolAvatar, walletAddress, tokenMetadataMa
             result.amountSol = parseFloat(amt2.replace(/,/g, ''));
             result.tokenAmount = parseFloat(amt1.replace(/,/g, '')) || primaryTokenAmount;
         } else {
+            // Token-to-token swap (not SOL-based), skip
             return null;
         }
 
@@ -392,11 +410,61 @@ function parseTransaction(tx, kolName, kolAvatar, walletAddress, tokenMetadataMa
                 }
             }
         }
-
         return result;
     }
 
-    // No reliable parse available -- skip rather than record bad data
+    // ============================================================
+    // STRATEGY 2: Analyze raw nativeTransfers + tokenTransfers
+    // Catches pump.fun, new DEXes, and anything events.swap misses.
+    // Uses net SOL movement to determine Buy vs Sell.
+    // ============================================================
+    if (tx.nativeTransfers && tx.tokenTransfers && tx.tokenTransfers.length > 0) {
+        let solOut = 0;
+        let solIn = 0;
+        for (const nt of tx.nativeTransfers) {
+            if (nt.fromUserAccount === walletAddress) solOut += (nt.amount || 0);
+            if (nt.toUserAccount === walletAddress) solIn += (nt.amount || 0);
+        }
+
+        let tokenInInfo = null;
+        let tokenOutInfo = null;
+        for (const tt of tx.tokenTransfers) {
+            if (!tt.mint || tt.mint === SOL_MINT) continue;
+            const amt = Math.abs(tt.tokenAmount || 0);
+            if (amt === 0) continue;
+            if (tt.toUserAccount === walletAddress) {
+                if (!tokenInInfo || amt > tokenInInfo.amount) {
+                    tokenInInfo = { mint: tt.mint, amount: amt };
+                }
+            }
+            if (tt.fromUserAccount === walletAddress) {
+                if (!tokenOutInfo || amt > tokenOutInfo.amount) {
+                    tokenOutInfo = { mint: tt.mint, amount: amt };
+                }
+            }
+        }
+
+        const netSolSpent = (solOut - solIn) / 1e9;
+        const netSolGained = (solIn - solOut) / 1e9;
+
+        if (netSolSpent > 0.001 && tokenInInfo && !tokenOutInfo) {
+            result.action = 'Buy';
+            result.amountSol = parseFloat(netSolSpent.toFixed(4));
+            result.tokenMint = tokenInInfo.mint;
+            result.tokenAmount = tokenInInfo.amount;
+        } else if (netSolGained > 0.001 && tokenOutInfo && !tokenInInfo) {
+            result.action = 'Sell';
+            result.amountSol = parseFloat(netSolGained.toFixed(4));
+            result.tokenMint = tokenOutInfo.mint;
+            result.tokenAmount = tokenOutInfo.amount;
+        }
+
+        if (result.action && result.amountSol > 0) {
+            result.tokenSymbol = resolveSymbol(result.tokenMint) || symbolFromDescription();
+            if (result.tokenSymbol) return result;
+        }
+    }
+
     return null;
 }
 
@@ -1264,6 +1332,56 @@ app.get('/api/submissions', (req, res) => {
         res.json({ submissions: subs, total: count.count });
     } catch (err) {
         res.status(500).json({ error: 'Failed' });
+    }
+});
+
+// ============================
+// Debug: test parsing for a wallet
+// ============================
+app.get('/api/debug/parse/:wallet', async (req, res) => {
+    if (!HELIUS_ENABLED) return res.status(400).json({ error: 'Helius disabled' });
+    const { wallet } = req.params;
+    try {
+        const txs = await fetchEnhancedTransactions(wallet, 20);
+        const mints = new Set();
+        for (const tx of txs) {
+            if (tx.tokenTransfers) {
+                for (const t of tx.tokenTransfers) { if (t.mint) mints.add(t.mint); }
+            }
+        }
+        const tokenMeta = await batchGetTokenMetadata([...mints]);
+
+        const results = txs.map(tx => {
+            const trade = parseTransaction(tx, 'TEST', '', wallet, tokenMeta);
+            return {
+                sig: tx.signature?.slice(0, 12),
+                type: tx.type || 'N/A',
+                desc: tx.description?.slice(0, 100) || 'none',
+                hasSwapEvent: !!tx.events?.swap,
+                nativeTransfers: (tx.nativeTransfers || []).length,
+                tokenTransfers: (tx.tokenTransfers || []).length,
+                parsed: trade ? {
+                    action: trade.action,
+                    symbol: trade.tokenSymbol,
+                    sol: trade.amountSol,
+                    mint: trade.tokenMint?.slice(0, 8),
+                } : 'SKIPPED',
+                valid: trade ? isValidTrade(trade) : false,
+            };
+        });
+
+        const parsed = results.filter(r => r.parsed !== 'SKIPPED');
+        const valid = results.filter(r => r.valid);
+        res.json({
+            wallet: wallet.slice(0, 12) + '...',
+            totalTxs: txs.length,
+            parsed: parsed.length,
+            valid: valid.length,
+            skipped: txs.length - parsed.length,
+            transactions: results,
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
