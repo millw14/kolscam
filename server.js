@@ -185,6 +185,50 @@ async function fetchEnhancedTransactions(walletAddress, limit = 50) {
     }
 }
 
+/**
+ * Paginate through ALL transactions for a wallet until sinceTimestamp.
+ * Each page = 100 txns = ~100 credits. Stops when txns are older than cutoff.
+ */
+async function fetchPaginatedTransactions(walletAddress, sinceTimestamp, maxPages = 50) {
+    if (!HELIUS_ENABLED || !HELIUS_API_KEY) return [];
+
+    const allTxs = [];
+    let beforeSig = undefined;
+
+    for (let page = 0; page < maxPages; page++) {
+        let url = `${HELIUS_BASE}/v0/addresses/${walletAddress}/transactions?api-key=${HELIUS_API_KEY}&limit=100`;
+        if (beforeSig) url += `&before=${beforeSig}`;
+
+        try {
+            const res = await fetch(url);
+            heliusCreditEstimate += 100;
+            if (!res.ok) break;
+
+            const txs = await res.json();
+            if (!txs || txs.length === 0) break;
+
+            let reachedCutoff = false;
+            for (const tx of txs) {
+                if (tx.timestamp && tx.timestamp < sinceTimestamp) {
+                    reachedCutoff = true;
+                    break;
+                }
+                allTxs.push(tx);
+            }
+
+            if (reachedCutoff || txs.length < 100) break;
+
+            beforeSig = txs[txs.length - 1].signature;
+            await new Promise(r => setTimeout(r, 250));
+        } catch (err) {
+            console.error(`  Pagination error for ${walletAddress.slice(0, 8)}...: ${err.message}`);
+            break;
+        }
+    }
+
+    return allTxs;
+}
+
 async function batchGetTokenMetadata(mints) {
     if (!HELIUS_ENABLED || !HELIUS_API_KEY) return {};
     const uncached = mints.filter(m => {
@@ -489,6 +533,117 @@ async function runBackgroundScan(isBackfill = false) {
     refreshTokenMarketData();
 }
 
+// ============================
+// Deep Paginated Backfill
+// Fetches ALL trades going back N days for every KOL.
+// Credit cost: ~100 per page × pages per wallet × wallets.
+// 7-day backfill ≈ 60-100k credits. 30-day ≈ 300-500k credits.
+// ============================
+
+async function scanSingleWalletDeep(wallet, kolName, kolAvatar, sinceTimestamp, maxPages = 30) {
+    if (!wallet || wallet.length < 10) return { saved: 0, pages: 0 };
+
+    try {
+        const txs = await fetchPaginatedTransactions(wallet, sinceTimestamp, maxPages);
+        if (!txs || txs.length === 0) return { saved: 0, pages: 0 };
+
+        const pages = Math.ceil(txs.length / 100);
+
+        const mints = new Set();
+        for (const tx of txs) {
+            if (tx.tokenTransfers) {
+                for (const t of tx.tokenTransfers) {
+                    if (t.mint) mints.add(t.mint);
+                }
+            }
+        }
+        const tokenMeta = await batchGetTokenMetadata([...mints]);
+
+        let saved = 0;
+        for (const tx of txs) {
+            const trade = parseTransaction(tx, kolName, kolAvatar, wallet, tokenMeta);
+            if (isValidTrade(trade) && trade.signature) {
+                try {
+                    insertTrade.run(
+                        wallet, trade.kolName, trade.kolAvatar || '',
+                        trade.action, trade.tokenSymbol, trade.amountSol,
+                        trade.signature, trade.timestamp || 0,
+                        trade.tokenMint || '', trade.tokenAmount || 0
+                    );
+                    saved++;
+                } catch (e) { /* duplicate */ }
+            }
+        }
+        return { saved, pages };
+    } catch (err) {
+        console.error(`  Deep scan error for ${wallet.slice(0, 8)}...: ${err.message}`);
+        return { saved: 0, pages: 0 };
+    }
+}
+
+async function runDeepBackfill(days = 7) {
+    if (scannerPhase === 'scanning') return;
+    scannerPhase = 'scanning';
+
+    const sinceTimestamp = Math.floor(Date.now() / 1000) - (days * 86400);
+    const validKols = COL_DATA.filter(k => k['Wallet Address'] && k['Wallet Address'].length > 10);
+
+    scanProgress = { done: 0, total: validKols.length };
+    const startCredits = heliusCreditEstimate;
+    console.log(`\n🔍 DEEP BACKFILL: ${validKols.length} KOLs, going back ${days} days (since ${new Date(sinceTimestamp * 1000).toISOString()})...\n`);
+
+    let totalSaved = 0;
+    let totalPages = 0;
+
+    for (let i = 0; i < validKols.length; i++) {
+        const kol = validKols[i];
+        let kolSaved = 0;
+        let kolPages = 0;
+
+        // Main wallet — up to 50 pages (5000 txns)
+        const mainResult = await scanSingleWalletDeep(
+            kol['Wallet Address'], kol.Name, kol.Avatar, sinceTimestamp, 50
+        );
+        kolSaved += mainResult.saved;
+        kolPages += mainResult.pages;
+
+        // Side wallets — up to 15 pages each
+        if (Array.isArray(kol['Side Wallets'])) {
+            for (const sw of kol['Side Wallets']) {
+                if (sw && sw.length > 10 && sw !== kol['Wallet Address']) {
+                    const sideResult = await scanSingleWalletDeep(
+                        sw, kol.Name, kol.Avatar, sinceTimestamp, 15
+                    );
+                    kolSaved += sideResult.saved;
+                    kolPages += sideResult.pages;
+                }
+            }
+        }
+
+        totalSaved += kolSaved;
+        totalPages += kolPages;
+        scanProgress.done = i + 1;
+
+        if (kolSaved > 0) {
+            console.log(`   [${i + 1}/${validKols.length}] ${kol.Name}: +${kolSaved} trades (${kolPages} API pages)`);
+        } else {
+            console.log(`   [${i + 1}/${validKols.length}] ${kol.Name}: 0 new trades`);
+        }
+
+        await new Promise(r => setTimeout(r, 200));
+    }
+
+    const creditsUsed = heliusCreditEstimate - startCredits;
+    const stats = getTradeCount.get();
+    const kolCount = getScannedKolCount.get();
+    console.log(`\n✅ Deep backfill complete!`);
+    console.log(`   +${totalSaved} new trades | ${totalPages} API pages | ~${creditsUsed.toLocaleString()} credits used`);
+    console.log(`   DB total: ${stats.count} trades from ${kolCount.count} wallets\n`);
+
+    scannerPhase = 'done';
+    refreshTokenMarketData();
+}
+
 // Refresh DexScreener market data for recently active tokens
 async function refreshTokenMarketData() {
     try {
@@ -625,7 +780,7 @@ app.get('/api/sol-price', (req, res) => {
 });
 
 /**
- * POST /api/backfill - Trigger a manual backfill scan
+ * POST /api/backfill - Trigger a quick backfill scan (100 txns/KOL)
  */
 app.post('/api/backfill', async (req, res) => {
     if (!HELIUS_ENABLED) {
@@ -634,13 +789,32 @@ app.post('/api/backfill', async (req, res) => {
     if (scannerPhase === 'scanning') {
         return res.status(409).json({ error: 'Scan already in progress', progress: `${scanProgress.done}/${scanProgress.total}` });
     }
-    console.log('📥 Manual backfill triggered via API');
-    res.json({ success: true, message: 'Backfill started (100 txns/KOL)' });
+    console.log('📥 Quick backfill triggered via API');
+    res.json({ success: true, message: 'Quick backfill started (100 txns/KOL)' });
     runBackgroundScan(true);
 });
 
 /**
- * POST /api/reset-trades - Wipe all trade data and trigger a clean backfill
+ * POST /api/deep-backfill?days=7 - Deep paginated backfill
+ * Fetches ALL trades going back N days for every KOL.
+ * Default: 7 days. Max: 30 days.
+ * Credit cost: ~100k for 7 days, ~500k for 30 days.
+ */
+app.post('/api/deep-backfill', async (req, res) => {
+    if (!HELIUS_ENABLED) {
+        return res.status(400).json({ error: 'Helius is disabled' });
+    }
+    if (scannerPhase === 'scanning') {
+        return res.status(409).json({ error: 'Scan already in progress', progress: `${scanProgress.done}/${scanProgress.total}` });
+    }
+    const days = Math.min(Math.max(parseInt(req.query.days) || 7, 1), 30);
+    console.log(`📥 Deep backfill triggered: ${days} days`);
+    res.json({ success: true, message: `Deep backfill started (${days} days, all pages)`, estimatedCredits: `~${(days * 15000).toLocaleString()}` });
+    runDeepBackfill(days);
+});
+
+/**
+ * POST /api/reset-trades?days=7 - Wipe all trade data and trigger a deep backfill
  */
 app.post('/api/reset-trades', async (req, res) => {
     if (!HELIUS_ENABLED) {
@@ -650,11 +824,12 @@ app.post('/api/reset-trades', async (req, res) => {
         return res.status(409).json({ error: 'Scan already in progress' });
     }
     try {
+        const days = Math.min(Math.max(parseInt(req.query.days) || 7, 1), 30);
         const before = getTradeCount.get();
         db.exec('DELETE FROM kol_trades');
-        console.log(`🗑️ Wiped ${before.count} trades from DB. Starting clean backfill...`);
-        res.json({ success: true, wiped: before.count, message: 'Trades wiped. Clean backfill starting...' });
-        runBackgroundScan(true);
+        console.log(`🗑️ Wiped ${before.count} trades. Starting deep backfill (${days} days)...`);
+        res.json({ success: true, wiped: before.count, message: `Trades wiped. Deep backfill starting (${days} days)...` });
+        runDeepBackfill(days);
     } catch (err) {
         console.error('Reset error:', err);
         res.status(500).json({ error: 'Failed to reset' });
@@ -1131,13 +1306,14 @@ app.listen(PORT, '0.0.0.0', () => {
         // ============================================
 
         if (existing.count < 100) {
-            console.log(`📥 DB has only ${existing.count} trades — running one-time backfill...`);
-            setTimeout(() => runBackgroundScan(true), 2000);
+            console.log(`📥 DB has only ${existing.count} trades — running deep backfill (7 days)...`);
+            setTimeout(() => runDeepBackfill(7), 2000);
         }
 
         console.log(`🔔 Webhook mode active — POST /webhook/helius receives trades`);
-        console.log(`   No recurring background scan. Webhooks handle everything.`);
-        console.log(`   Manual backfill available: POST /api/backfill`);
+        console.log(`   Deep backfill: POST /api/deep-backfill?days=7`);
+        console.log(`   Reset + refill: POST /api/reset-trades?days=7`);
+        console.log(`   Quick backfill: POST /api/backfill`);
     } else {
         console.log(`⏸️  Helius DISABLED — no scanning, no credits used.`);
         console.log(`   Webhook endpoint is ready but won't process without HELIUS_ENABLED=true`);
