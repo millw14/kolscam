@@ -350,38 +350,35 @@ function parseTransaction(tx, kolName, kolAvatar, walletAddress, tokenMetadataMa
 
     // ============================================================
     // STRATEGY 0: Helius Swap Events (most accurate)
-    // Skip stablecoins/infra tokens when finding the primary token
-    // so multi-hop swaps (SOL→USDC→Memecoin) pick up the memecoin.
+    // Skip SOL, stablecoins, and infra tokens when finding the
+    // primary token. If only stablecoins found, fall through to
+    // Strategy 2 which uses net positions across all transfers.
     // ============================================================
     const swap = tx.events?.swap;
     if (swap) {
         const nativeIn = swap.nativeInput;
         const nativeOut = swap.nativeOutput;
-        // Find the actual memecoin, skipping SOL and stablecoins
-        const tokenIn = swap.tokenInputs?.find(t =>
-            t.mint !== SOL_MINT && !SKIP_MINTS.has(t.mint)
-        ) || swap.tokenInputs?.find(t => t.mint !== SOL_MINT);
-        const tokenOut = swap.tokenOutputs?.find(t =>
-            t.mint !== SOL_MINT && !SKIP_MINTS.has(t.mint)
-        ) || swap.tokenOutputs?.find(t => t.mint !== SOL_MINT);
 
-        // Also check for WSOL in tokenInputs/tokenOutputs (some swaps wrap SOL)
-        const wsolIn = swap.tokenInputs?.find(t => t.mint === SOL_MINT);
-        const wsolOut = swap.tokenOutputs?.find(t => t.mint === SOL_MINT);
-        const totalSolIn = (nativeIn?.amount || 0) + (wsolIn?.rawTokenAmount?.tokenAmount || 0);
-        const totalSolOut = (nativeOut?.amount || 0) + (wsolOut?.rawTokenAmount?.tokenAmount || 0);
+        // Find the actual memecoin, strictly skipping stablecoins
+        const isSkipToken = (t) => {
+            if (t.mint === SOL_MINT || SKIP_MINTS.has(t.mint)) return true;
+            const sym = resolveSymbol(t.mint);
+            return sym && SKIP_TOKENS.has(sym);
+        };
+        const tokenIn = swap.tokenInputs?.find(t => !isSkipToken(t));
+        const tokenOut = swap.tokenOutputs?.find(t => !isSkipToken(t));
 
-        if (totalSolIn > 0 && tokenOut) {
+        if (nativeIn && nativeIn.amount > 0 && tokenOut) {
             result.action = 'Buy';
-            result.amountSol = parseFloat((totalSolIn / 1e9).toFixed(4));
+            result.amountSol = parseFloat((nativeIn.amount / 1e9).toFixed(4));
             result.tokenMint = tokenOut.mint || primaryMint;
             result.tokenAmount = Math.abs(tokenOut.rawTokenAmount?.tokenAmount
                 ? tokenOut.rawTokenAmount.tokenAmount / Math.pow(10, tokenOut.rawTokenAmount.decimals || 0)
                 : tokenOut.tokenAmount || primaryTokenAmount);
             result.tokenSymbol = resolveSymbol(result.tokenMint) || symbolFromDescription();
-        } else if (totalSolOut > 0 && tokenIn) {
+        } else if (nativeOut && nativeOut.amount > 0 && tokenIn) {
             result.action = 'Sell';
-            result.amountSol = parseFloat((totalSolOut / 1e9).toFixed(4));
+            result.amountSol = parseFloat((nativeOut.amount / 1e9).toFixed(4));
             result.tokenMint = tokenIn.mint || primaryMint;
             result.tokenAmount = Math.abs(tokenIn.rawTokenAmount?.tokenAmount
                 ? tokenIn.rawTokenAmount.tokenAmount / Math.pow(10, tokenIn.rawTokenAmount.decimals || 0)
@@ -390,6 +387,9 @@ function parseTransaction(tx, kolName, kolAvatar, walletAddress, tokenMetadataMa
         }
 
         if (result.action && result.amountSol > 0 && result.tokenSymbol) return result;
+        // Reset if Strategy 0 couldn't find a valid memecoin
+        result.action = null;
+        result.amountSol = 0;
     }
 
     // ============================================================
