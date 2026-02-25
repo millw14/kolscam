@@ -544,6 +544,17 @@ async function scanSingleWallet(wallet, kolName, kolAvatar, txLimit = 10) {
             }
         }
         const tokenMeta = await batchGetTokenMetadata([...mints]);
+        // DexScreener fallback for unresolved tokens
+        const unresolvedMints = [...mints].filter(m =>
+            m !== 'So11111111111111111111111111111111111111112' &&
+            (!tokenMeta[m] || !tokenMeta[m].symbol)
+        );
+        if (unresolvedMints.length > 0) {
+            const dexData = await fetchDexScreenerData(unresolvedMints);
+            for (const [mint, data] of Object.entries(dexData)) {
+                if (data.symbol) tokenMeta[mint] = { name: data.name, symbol: data.symbol, image: data.image };
+            }
+        }
 
         let saved = 0;
         for (const tx of txs) {
@@ -649,6 +660,20 @@ async function scanSingleWalletDeep(wallet, kolName, kolAvatar, sinceTimestamp, 
             }
         }
         const tokenMeta = await batchGetTokenMetadata([...mints]);
+
+        // DexScreener fallback: resolve symbols Helius missed (pump.fun, new tokens)
+        const unresolvedMints = [...mints].filter(m =>
+            m !== 'So11111111111111111111111111111111111111112' &&
+            (!tokenMeta[m] || !tokenMeta[m].symbol)
+        );
+        if (unresolvedMints.length > 0) {
+            const dexData = await fetchDexScreenerData(unresolvedMints);
+            for (const [mint, data] of Object.entries(dexData)) {
+                if (data.symbol) {
+                    tokenMeta[mint] = { name: data.name, symbol: data.symbol, image: data.image };
+                }
+            }
+        }
 
         let saved = 0;
         for (const tx of txs) {
@@ -824,6 +849,21 @@ app.post('/webhook/helius', async (req, res) => {
                 }
             }
             const tokenMeta = mints.size > 0 ? await batchGetTokenMetadata([...mints]) : {};
+            // DexScreener fallback for unresolved tokens in webhook
+            if (mints.size > 0) {
+                const unresolvedMints = [...mints].filter(m =>
+                    m !== 'So11111111111111111111111111111111111111112' &&
+                    (!tokenMeta[m] || !tokenMeta[m].symbol)
+                );
+                if (unresolvedMints.length > 0) {
+                    try {
+                        const dexData = await fetchDexScreenerData(unresolvedMints);
+                        for (const [mint, data] of Object.entries(dexData)) {
+                            if (data.symbol) tokenMeta[mint] = { name: data.name, symbol: data.symbol, image: data.image };
+                        }
+                    } catch { /* DexScreener fallback failed, continue */ }
+                }
+            }
 
             // Parse and save
             const isSideWallet = SIDE_WALLET_SET.has(kolWallet);
@@ -1372,6 +1412,19 @@ app.get('/api/debug/parse/:wallet', async (req, res) => {
             }
         }
         const tokenMeta = await batchGetTokenMetadata([...mints]);
+        // DexScreener fallback for debug endpoint too
+        const unresolvedMints = [...mints].filter(m =>
+            m !== 'So11111111111111111111111111111111111111112' &&
+            (!tokenMeta[m] || !tokenMeta[m].symbol)
+        );
+        if (unresolvedMints.length > 0) {
+            try {
+                const dexData = await fetchDexScreenerData(unresolvedMints);
+                for (const [mint, data] of Object.entries(dexData)) {
+                    if (data.symbol) tokenMeta[mint] = { name: data.name, symbol: data.symbol, image: data.image };
+                }
+            } catch { /* */ }
+        }
 
         const results = txs.map(tx => {
             const trade = parseTransaction(tx, 'TEST', '', wallet, tokenMeta);
