@@ -121,6 +121,26 @@ ul { list-style: none; }
     gap: 12px;
 }
 
+.nav-x-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.nav-x-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+}
+
 .pump-btn {
     background: rgba(0, 224, 146, 0.1);
     border: 1px solid rgba(0, 224, 146, 0.2);
@@ -1691,9 +1711,6 @@ ul { list-style: none; }
 }
 
 @media (max-width: 600px) {
-    .nav-right .pump-btn,
-    .nav-right .settings-icon { display: none; }
-
     .btn-submit-wallet span { display: none; }
     .btn-submit-wallet { padding: 6px 10px; }
 
