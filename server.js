@@ -5,7 +5,7 @@ import {
     insertWallet, getAllWallets, getWalletByAddress,
     getCachedToken, upsertTokenCache, upsertTokenMarketData,
     insertTrade, getRecentTrades, getRecentTradesRaw, getTradesSince,
-    getLeaderboardStats, getRecentTokens, getTokenKolPositions,
+    getLeaderboardStats, getKolTokenPnl, getRecentTokens, getTokenKolPositions,
     getTradeCount, getScannedKolCount,
     insertSideWalletSubmission, getAllSubmissions, getSubmissionCount
 } from './db.js';
@@ -863,6 +863,64 @@ app.get('/api/kol/:name/sides', (req, res) => {
 });
 
 /**
+ * GET /api/kol/:name/token-pnl - Per-token PnL breakdown for a KOL
+ */
+app.get('/api/kol/:name/token-pnl', (req, res) => {
+    const { name } = req.params;
+    try {
+        const kol = COL_DATA.find(k => k.Name.toLowerCase() === name.toLowerCase());
+        if (!kol) return res.status(404).json({ error: 'KOL not found' });
+
+        const positions = getKolTokenPnl.all(kol.Name, 50);
+
+        const enriched = positions.map(pos => {
+            const cached = pos.token_mint ? getCachedToken.get(pos.token_mint) : null;
+            const tokenImage = cached?.image || '';
+            const currentPrice = cached?.price_usd || 0;
+
+            const realizedPnl = pos.sold_sol - pos.bought_sol;
+            const tokensHeld = Math.max(0, pos.tokens_bought - pos.tokens_sold);
+            const holdingValueUsd = tokensHeld * currentPrice;
+            const holdingValueSol = SOL_PRICE_USD > 0 ? holdingValueUsd / SOL_PRICE_USD : 0;
+            const totalPnl = realizedPnl + holdingValueSol;
+            const roi = pos.bought_sol > 0 ? ((pos.sold_sol + holdingValueSol - pos.bought_sol) / pos.bought_sol * 100) : 0;
+            const durationSec = pos.last_trade - pos.first_trade;
+
+            return {
+                tokenSymbol: pos.token_symbol,
+                tokenMint: pos.token_mint,
+                tokenImage,
+                boughtSol: parseFloat(pos.bought_sol.toFixed(4)),
+                soldSol: parseFloat(pos.sold_sol.toFixed(4)),
+                tokensBought: pos.tokens_bought,
+                tokensSold: pos.tokens_sold,
+                tokensHeld,
+                holdingValueSol: parseFloat(holdingValueSol.toFixed(4)),
+                holdingValueUsd: parseFloat(holdingValueUsd.toFixed(2)),
+                realizedPnl: parseFloat(realizedPnl.toFixed(4)),
+                totalPnl: parseFloat(totalPnl.toFixed(4)),
+                totalPnlUsd: parseFloat((totalPnl * SOL_PRICE_USD).toFixed(2)),
+                roi: parseFloat(roi.toFixed(1)),
+                buyCount: pos.buy_count,
+                sellCount: pos.sell_count,
+                durationSec,
+                firstTrade: pos.first_trade,
+                lastTrade: pos.last_trade,
+            };
+        });
+
+        res.json({
+            kolName: kol.Name,
+            solPrice: SOL_PRICE_USD,
+            tokens: enriched,
+        });
+    } catch (err) {
+        console.error('Token PnL error:', err);
+        res.status(500).json({ error: 'Failed' });
+    }
+});
+
+/**
  * GET /api/tokens - Token tracker page data grouped by market cap
  */
 app.get('/api/tokens', async (req, res) => {
@@ -1055,21 +1113,19 @@ app.listen(PORT, '0.0.0.0', () => {
 
     if (HELIUS_ENABLED) {
         // ============================================
-        // WEBHOOKS handle real-time trade ingestion.
-        // Background scan runs every 6 hours as catchup.
+        // WEBHOOKS handle ALL real-time trade ingestion.
+        // No recurring background scan -- saves credits.
+        // One-time backfill only when DB is empty.
         // ============================================
 
-        // One-time backfill on first start if DB is sparse
         if (existing.count < 100) {
-            console.log(`📥 DB has only ${existing.count} trades — running initial backfill (100 txns/KOL)...`);
+            console.log(`📥 DB has only ${existing.count} trades — running one-time backfill...`);
             setTimeout(() => runBackgroundScan(true), 2000);
         }
 
-        // Background scan every 24 hours (safety net only, webhooks handle real-time)
-        setInterval(() => runBackgroundScan(), 24 * 60 * 60 * 1000);
-
         console.log(`🔔 Webhook mode active — POST /webhook/helius receives trades`);
-        console.log(`   Background scan every 24 hours as safety net.`);
+        console.log(`   No recurring background scan. Webhooks handle everything.`);
+        console.log(`   Manual backfill available: POST /api/backfill`);
     } else {
         console.log(`⏸️  Helius DISABLED — no scanning, no credits used.`);
         console.log(`   Webhook endpoint is ready but won't process without HELIUS_ENABLED=true`);

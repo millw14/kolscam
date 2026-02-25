@@ -89,6 +89,20 @@ function timeAgoShort(timestamp) {
     return `${Math.floor(seconds / 86400)}d`;
 }
 
+const AVATAR_COLORS = ['#e91e63','#9c27b0','#673ab7','#3f51b5','#2196f3','#00bcd4','#009688','#4caf50','#ff9800','#ff5722','#795548','#607d8b'];
+function getAvatarHtml(name, avatarUrl, cssClass = 'kol-avatar') {
+    if (avatarUrl && avatarUrl !== '' && avatarUrl !== '/logo.png') {
+        return `<img src="${avatarUrl}" class="${cssClass}" alt="${name}" loading="lazy" onerror="this.outerHTML=getInitialAvatar('${name.replace(/'/g, '')}','${cssClass}')" />`;
+    }
+    return getInitialAvatar(name, cssClass);
+}
+function getInitialAvatar(name, cssClass = 'kol-avatar') {
+    const initial = (name || '?').charAt(0).toUpperCase();
+    const colorIdx = name ? name.charCodeAt(0) % AVATAR_COLORS.length : 0;
+    const bg = AVATAR_COLORS[colorIdx];
+    return `<div class="${cssClass} avatar-initial" style="background:${bg};">${initial}</div>`;
+}
+
 function formatSol(amount) {
     if (amount >= 1000) return amount.toFixed(0);
     if (amount >= 100) return amount.toFixed(1);
@@ -229,21 +243,27 @@ function renderLeaderboard(leaderboard, meta) {
             socialIcon = `<a href="${entry.twitter}" target="_blank" class="social-link"><i class="ri-twitter-x-fill"></i></a>`;
         }
 
-        // PnL formatting
-        const pnlClass = entry.pnl >= 0 ? 'buy' : 'sell';
-        const pnlSign = entry.pnl >= 0 ? '+' : '';
-        const pnlUsd = formatUsd(Math.abs(entry.pnlUsd || entry.pnl * APP_STATE.solPrice));
-        const shortWallet = entry.wallet.substring(0, 6);
-
-        // Buy/Sell counts - Kolscan style
+        const shortWallet = entry.wallet ? entry.wallet.substring(0, 6) : '';
         const buyCount = entry.buyCount || 0;
         const sellCount = entry.sellCount || 0;
+
+        let pnlHtml;
+        if (entry.tradeCount === 0) {
+            pnlHtml = `<td class="pnl-cell" style="color:#555;">--</td>`;
+        } else {
+            const pnlClass = entry.pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
+            const pnlSign = entry.pnl >= 0 ? '+' : '-';
+            const pnlUsd = formatUsd(Math.abs(entry.pnlUsd || entry.pnl * APP_STATE.solPrice));
+            pnlHtml = `<td class="pnl-cell ${pnlClass}">${pnlSign}${formatSol(Math.abs(entry.pnl))} Sol <span class="pnl-usd">($${pnlUsd})</span></td>`;
+        }
+
+        const avatarHtml = getAvatarHtml(entry.name, entry.avatar, 'kol-avatar');
 
         tr.innerHTML = `
           <td class="rank-cell">${rankHtml}</td>
           <td>
             <div class="trader-info">
-              <img src="${entry.avatar}" class="kol-avatar" alt="${entry.name}" loading="lazy" onerror="this.src='/logo.png'" />
+              ${avatarHtml}
               <div class="trader-details">
                 <div class="trader-name-row">
                     <span class="trader-name">${entry.name}</span>
@@ -256,7 +276,7 @@ function renderLeaderboard(leaderboard, meta) {
           <td class="trades-cell">
             <span class="count-buy">${buyCount}</span><span class="count-separator">/</span><span class="count-sell">${sellCount}</span>
           </td>
-          <td class="${pnlClass} pnl-cell">${pnlSign}${formatSol(Math.abs(entry.pnl))} Sol <span class="pnl-usd">($${pnlUsd})</span></td>
+          ${pnlHtml}
         `;
 
         tr.addEventListener('click', (e) => {
@@ -332,7 +352,7 @@ async function renderTrades() {
 
         card.innerHTML = `
       <div class="trade-header">
-        <img src="${trade.kolAvatar || '/logo.png'}" class="trade-avatar" alt="${trade.kolName}" onerror="this.src='/logo.png'" />
+        ${getAvatarHtml(trade.kolName, trade.kolAvatar, 'trade-avatar')}
         <div class="trade-content">
           <span class="trade-name kol-link" data-kol="${trade.kolName}">${trade.kolName}${sideTag}</span>
           <span class="trade-verb ${actionClass}">${actionVerb}</span>
@@ -467,7 +487,7 @@ async function renderProfile(kolName) {
 
     // Header
     profileHeader.innerHTML = `
-        <img src="${kol.Avatar || '/logo.png'}" class="profile-avatar" alt="${kol.Name}" onerror="this.src='/logo.png'" />
+        ${getAvatarHtml(kol.Name, kol.Avatar, 'profile-avatar')}
         <div class="profile-info">
             <div class="profile-name">
                 ${kol.Name}
@@ -486,7 +506,7 @@ async function renderProfile(kolName) {
     const lbData = await apiFetch(`/leaderboard?period=${APP_STATE.leaderboardPeriod}`);
     let entry = null;
     if (lbData?.leaderboard) {
-        entry = lbData.leaderboard.find(e => e.wallet === kol['Wallet Address']);
+        entry = lbData.leaderboard.find(e => e.name === kol.Name || e.wallet === kol['Wallet Address']);
     }
 
     if (entry) {
@@ -586,6 +606,9 @@ async function renderProfile(kolName) {
 
     // Load main wallet trades by default
     loadMainWalletTrades(kol);
+
+    // Load Token PnL
+    loadTokenPnl(kol);
 }
 
 async function loadMainWalletTrades(kol) {
@@ -645,6 +668,117 @@ async function loadBundleTrades(kol) {
         `;
         profileTrades.appendChild(row);
     });
+}
+
+// ============================
+// TOKEN PNL (Profile)
+// ============================
+
+function formatDuration(seconds) {
+    if (!seconds || seconds <= 0) return '--';
+    const hrs = Math.floor(seconds / 3600);
+    const days = Math.floor(hrs / 24);
+    if (days > 0) return `${days}d`;
+    if (hrs > 0) return `${hrs}hr`;
+    const mins = Math.floor(seconds / 60);
+    return `${mins}m`;
+}
+
+async function loadTokenPnl(kol) {
+    const container = document.getElementById('token-pnl-list');
+    if (!container) return;
+    container.innerHTML = `<div class="profile-empty"><i class="ri-loader-4-line" style="animation: spin 1s linear infinite;"></i> Loading token PnL...</div>`;
+
+    const data = await apiFetch(`/kol/${encodeURIComponent(kol.Name)}/token-pnl`);
+
+    if (!data || !data.tokens || data.tokens.length === 0) {
+        container.innerHTML = `<div class="profile-empty">No token positions found</div>`;
+        return;
+    }
+
+    if (data.solPrice) APP_STATE.solPrice = data.solPrice;
+
+    // Sort handler
+    const sortSelect = document.getElementById('token-pnl-sort');
+    let tokens = [...data.tokens];
+
+    function renderTokenCards(tokensToRender) {
+        container.innerHTML = '';
+        tokensToRender.forEach(tok => {
+            const card = document.createElement('div');
+            card.className = 'token-pnl-card';
+
+            const pnlClass = tok.totalPnl >= 0 ? 'profit' : 'loss';
+            const pnlSign = tok.totalPnl >= 0 ? '+' : '';
+            const roiClass = tok.roi >= 0 ? 'profit' : 'loss';
+            const roiSign = tok.roi >= 0 ? '+' : '';
+            const duration = formatDuration(tok.durationSec);
+
+            const tokenImg = tok.tokenImage
+                ? `<img src="${tok.tokenImage}" class="token-pnl-img" onerror="this.style.display='none'" />`
+                : `<div class="token-pnl-img-placeholder">${tok.tokenSymbol.charAt(0)}</div>`;
+
+            const timeStr = tok.lastTrade ? timeAgo(tok.lastTrade) : '';
+
+            card.innerHTML = `
+                <div class="token-pnl-top">
+                    <div class="token-pnl-left">
+                        ${tokenImg}
+                        <div class="token-pnl-name-col">
+                            <a href="https://trade.padre.gg/trade/solana/${tok.tokenMint}" target="_blank" class="token-pnl-symbol">${tok.tokenSymbol}</a>
+                            <span class="token-pnl-time">${timeStr}</span>
+                        </div>
+                    </div>
+                    <div class="token-pnl-total ${pnlClass}">
+                        ${pnlSign}${formatSol(Math.abs(tok.totalPnl))} Sol
+                        <span class="token-pnl-usd">($${formatUsd(Math.abs(tok.totalPnlUsd))})</span>
+                    </div>
+                </div>
+                <div class="token-pnl-grid">
+                    <div class="token-pnl-cell">
+                        <span class="token-pnl-cell-label">Bought</span>
+                        <span class="token-pnl-cell-value buy">${formatSol(tok.boughtSol)} Sol</span>
+                        <span class="token-pnl-cell-sub">(${formatTokenAmount(tok.tokensBought)})</span>
+                    </div>
+                    <div class="token-pnl-cell">
+                        <span class="token-pnl-cell-label">Sold</span>
+                        <span class="token-pnl-cell-value sell">${formatSol(tok.soldSol)} Sol</span>
+                        <span class="token-pnl-cell-sub">(${formatTokenAmount(tok.tokensSold)})</span>
+                    </div>
+                    <div class="token-pnl-cell">
+                        <span class="token-pnl-cell-label">Holding</span>
+                        <span class="token-pnl-cell-value">${formatSol(tok.holdingValueSol)} Sol</span>
+                        <span class="token-pnl-cell-sub">(${formatTokenAmount(tok.tokensHeld)})</span>
+                    </div>
+                    <div class="token-pnl-cell">
+                        <span class="token-pnl-cell-label">ROI</span>
+                        <span class="token-pnl-cell-value ${roiClass}">${roiSign}${Math.abs(tok.roi).toFixed(1)}%</span>
+                    </div>
+                    <div class="token-pnl-cell">
+                        <span class="token-pnl-cell-label">Duration</span>
+                        <span class="token-pnl-cell-value">${duration}</span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function sortTokens(mode) {
+        let sorted = [...data.tokens];
+        if (mode === 'profit') sorted.sort((a, b) => b.totalPnl - a.totalPnl);
+        else if (mode === 'loss') sorted.sort((a, b) => a.totalPnl - b.totalPnl);
+        else sorted.sort((a, b) => b.lastTrade - a.lastTrade);
+        return sorted;
+    }
+
+    if (sortSelect) {
+        sortSelect.onchange = () => {
+            renderTokenCards(sortTokens(sortSelect.value));
+        };
+    }
+
+    renderTokenCards(sortTokens('profit'));
 }
 
 // ============================
@@ -786,7 +920,7 @@ async function fetchTickerTrades() {
             if (trade.isSideWallet) div.classList.add('bundle-trade');
 
             div.innerHTML = `
-                <img src="${trade.kolAvatar || '/logo.png'}" class="ticker-kol-img" onerror="this.src='/logo.png'" />
+                ${getAvatarHtml(trade.kolName, trade.kolAvatar, 'ticker-kol-img')}
                 <span class="ticker-name kol-link" data-kol="${trade.kolName}">${trade.kolName}${tickerSideTag}</span>
                 <span class="ticker-verb">${actionVerb}</span>
                 <span class="ticker-sol ${actionClass}">${formatSol(trade.amountSol)} sol</span>

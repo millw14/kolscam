@@ -203,6 +203,29 @@ const getTokenKolPositions = db.prepare(`
   LIMIT ?
 `);
 
+// Per-token PnL for a specific KOL (profile page)
+const getKolTokenPnl = db.prepare(`
+  SELECT 
+    token_symbol,
+    token_mint,
+    SUM(CASE WHEN action = 'Buy' THEN amount_sol ELSE 0 END) as bought_sol,
+    SUM(CASE WHEN action = 'Sell' THEN amount_sol ELSE 0 END) as sold_sol,
+    SUM(CASE WHEN action = 'Buy' THEN token_amount ELSE 0 END) as tokens_bought,
+    SUM(CASE WHEN action = 'Sell' THEN token_amount ELSE 0 END) as tokens_sold,
+    SUM(CASE WHEN action = 'Buy' THEN 1 ELSE 0 END) as buy_count,
+    SUM(CASE WHEN action = 'Sell' THEN 1 ELSE 0 END) as sell_count,
+    MIN(tx_timestamp) as first_trade,
+    MAX(tx_timestamp) as last_trade,
+    COUNT(*) as trade_count
+  FROM kol_trades
+  WHERE kol_name = ?
+    AND token_symbol NOT IN ('SOL', 'WSOL', 'USDC', 'USDT', 'USDS')
+    AND token_mint != ''
+  GROUP BY token_symbol, token_mint
+  ORDER BY bought_sol DESC
+  LIMIT ?
+`);
+
 // Count total trades in DB
 const getTradeCount = db.prepare(`SELECT COUNT(*) as count FROM kol_trades WHERE action IN ('Buy', 'Sell')`);
 
@@ -236,6 +259,7 @@ export {
   getRecentTradesRaw,
   getTradesSince,
   getLeaderboardStats,
+  getKolTokenPnl,
   getRecentTokens,
   getTokenKolPositions,
   getTradeCount,

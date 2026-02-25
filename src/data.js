@@ -307,5 +307,75 @@ export const COL_DATA = [
     "Wallet Address": "99xnE2zEFi8YhmKDaikc1EvH6ELTQJppnqUwMzmpLXrs",
     "Avatar": "/avatars/99xnE2zEFi8YhmKDaikc1EvH6ELTQJppnqUwMzmpLXrs.png",
     "Side Wallets": ["6izaw8jHUdohFoRDvq4XAHJxr8s8trFWz1a8JkMvExhy"]
+  },
+  {
+    "Name": "h14",
+    "Twitter Handle": "https://x.com/h14gg",
+    "Wallet Address": "BJXjRq566xt66pcCMLPSuNxyUpPNBdJGP56S7fMda",
+    "Avatar": "",
+    "Side Wallets": []
+  },
+  {
+    "Name": "Cented",
+    "Twitter Handle": "https://x.com/CentedCrypto",
+    "Wallet Address": "CyaE1VxvBrahnPWkqm5VsdCvyS2QmNht2UFrKJHga54o",
+    "Avatar": "",
+    "Side Wallets": []
+  },
+  {
+    "Name": "Yokai Ryujin",
+    "Twitter Handle": "https://x.com/YokaiRyujin",
+    "Wallet Address": "2w3zDW2e1KjYtM2pHTkgh78L8DjMrC6fuB9uhwKNigTs",
+    "Avatar": "",
+    "Side Wallets": []
+  },
+  {
+    "Name": "Exotic",
+    "Twitter Handle": "https://x.com/ExoticSolana",
+    "Wallet Address": "Dwo2kj88YYhwcFJiybTjXezR9a6QjkMASz5xXD7kujXC",
+    "Avatar": "",
+    "Side Wallets": []
+  },
+  {
+    "Name": "Jijo",
+    "Twitter Handle": "https://x.com/jijo_xyz",
+    "Wallet Address": "4BdKaxN8G6ka4GYtQQWk4G4dZRUTX2vQH9GcXdBREFUk",
+    "Avatar": "",
+    "Side Wallets": []
+  },
+  {
+    "Name": "Megz",
+    "Twitter Handle": "https://x.com/megz_sol",
+    "Wallet Address": "CECN4BW4DKnbyddkd9FhWVR5dotzKhQr5p7DUPhQ55Du",
+    "Avatar": "",
+    "Side Wallets": []
+  },
+  {
+    "Name": "Kadenox",
+    "Twitter Handle": "https://x.com/Kadenox_",
+    "Wallet Address": "B32QbbdDAyhvUQzjcaM5j6ZVKwjCxAwGH5Xgvb9SJqnC",
+    "Avatar": "",
+    "Side Wallets": []
+  },
+  {
+    "Name": "Fozzy",
+    "Twitter Handle": "https://x.com/fozzy_bear1",
+    "Wallet Address": "B9oKseVKRntTvfADyaUo7oVmoyVbBfUf4NKyQc4KK2D",
+    "Avatar": "",
+    "Side Wallets": []
+  },
+  {
+    "Name": "Kev",
+    "Twitter Handle": "https://x.com/Kev_Sol_",
+    "Wallet Address": "BTf4A2exGK9BCVDNzy65b9dUzXgMqB4weVkvTMFQsadd",
+    "Avatar": "",
+    "Side Wallets": []
+  },
+  {
+    "Name": "Cooker",
+    "Twitter Handle": "https://x.com/CookerSol",
+    "Wallet Address": "8deJ9xeUvXSJwicYptA9mHsU2rN2pDx37KWzkDkEXhU6",
+    "Avatar": "",
+    "Side Wallets": []
   }
 ];
