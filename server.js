@@ -350,25 +350,38 @@ function parseTransaction(tx, kolName, kolAvatar, walletAddress, tokenMetadataMa
 
     // ============================================================
     // STRATEGY 0: Helius Swap Events (most accurate)
+    // Skip stablecoins/infra tokens when finding the primary token
+    // so multi-hop swaps (SOL→USDC→Memecoin) pick up the memecoin.
     // ============================================================
     const swap = tx.events?.swap;
     if (swap) {
         const nativeIn = swap.nativeInput;
         const nativeOut = swap.nativeOutput;
-        const tokenIn = swap.tokenInputs?.find(t => t.mint !== SOL_MINT);
-        const tokenOut = swap.tokenOutputs?.find(t => t.mint !== SOL_MINT);
+        // Find the actual memecoin, skipping SOL and stablecoins
+        const tokenIn = swap.tokenInputs?.find(t =>
+            t.mint !== SOL_MINT && !SKIP_MINTS.has(t.mint)
+        ) || swap.tokenInputs?.find(t => t.mint !== SOL_MINT);
+        const tokenOut = swap.tokenOutputs?.find(t =>
+            t.mint !== SOL_MINT && !SKIP_MINTS.has(t.mint)
+        ) || swap.tokenOutputs?.find(t => t.mint !== SOL_MINT);
 
-        if (nativeIn && nativeIn.amount > 0 && tokenOut) {
+        // Also check for WSOL in tokenInputs/tokenOutputs (some swaps wrap SOL)
+        const wsolIn = swap.tokenInputs?.find(t => t.mint === SOL_MINT);
+        const wsolOut = swap.tokenOutputs?.find(t => t.mint === SOL_MINT);
+        const totalSolIn = (nativeIn?.amount || 0) + (wsolIn?.rawTokenAmount?.tokenAmount || 0);
+        const totalSolOut = (nativeOut?.amount || 0) + (wsolOut?.rawTokenAmount?.tokenAmount || 0);
+
+        if (totalSolIn > 0 && tokenOut) {
             result.action = 'Buy';
-            result.amountSol = parseFloat((nativeIn.amount / 1e9).toFixed(4));
+            result.amountSol = parseFloat((totalSolIn / 1e9).toFixed(4));
             result.tokenMint = tokenOut.mint || primaryMint;
             result.tokenAmount = Math.abs(tokenOut.rawTokenAmount?.tokenAmount
                 ? tokenOut.rawTokenAmount.tokenAmount / Math.pow(10, tokenOut.rawTokenAmount.decimals || 0)
                 : tokenOut.tokenAmount || primaryTokenAmount);
             result.tokenSymbol = resolveSymbol(result.tokenMint) || symbolFromDescription();
-        } else if (nativeOut && nativeOut.amount > 0 && tokenIn) {
+        } else if (totalSolOut > 0 && tokenIn) {
             result.action = 'Sell';
-            result.amountSol = parseFloat((nativeOut.amount / 1e9).toFixed(4));
+            result.amountSol = parseFloat((totalSolOut / 1e9).toFixed(4));
             result.tokenMint = tokenIn.mint || primaryMint;
             result.tokenAmount = Math.abs(tokenIn.rawTokenAmount?.tokenAmount
                 ? tokenIn.rawTokenAmount.tokenAmount / Math.pow(10, tokenIn.rawTokenAmount.decimals || 0)
@@ -415,8 +428,9 @@ function parseTransaction(tx, kolName, kolAvatar, walletAddress, tokenMetadataMa
 
     // ============================================================
     // STRATEGY 2: Analyze raw nativeTransfers + tokenTransfers
-    // Catches pump.fun, new DEXes, and anything events.swap misses.
-    // Uses net SOL movement to determine Buy vs Sell.
+    // Catches pump.fun, new DEXes, multi-hop swaps, and anything
+    // events.swap misses. Uses NET token positions per mint so
+    // intermediary tokens (USDC routed through) cancel out.
     // ============================================================
     if (tx.nativeTransfers && tx.tokenTransfers && tx.tokenTransfers.length > 0) {
         let solOut = 0;
@@ -426,37 +440,45 @@ function parseTransaction(tx, kolName, kolAvatar, walletAddress, tokenMetadataMa
             if (nt.toUserAccount === walletAddress) solIn += (nt.amount || 0);
         }
 
-        let tokenInInfo = null;
-        let tokenOutInfo = null;
+        // Calculate net token position per mint for this wallet
+        const tokenNets = {};
         for (const tt of tx.tokenTransfers) {
             if (!tt.mint || tt.mint === SOL_MINT) continue;
             const amt = Math.abs(tt.tokenAmount || 0);
             if (amt === 0) continue;
-            if (tt.toUserAccount === walletAddress) {
-                if (!tokenInInfo || amt > tokenInInfo.amount) {
-                    tokenInInfo = { mint: tt.mint, amount: amt };
-                }
-            }
-            if (tt.fromUserAccount === walletAddress) {
-                if (!tokenOutInfo || amt > tokenOutInfo.amount) {
-                    tokenOutInfo = { mint: tt.mint, amount: amt };
-                }
+            if (!tokenNets[tt.mint]) tokenNets[tt.mint] = { in: 0, out: 0 };
+            if (tt.toUserAccount === walletAddress) tokenNets[tt.mint].in += amt;
+            if (tt.fromUserAccount === walletAddress) tokenNets[tt.mint].out += amt;
+        }
+
+        // Find primary token: largest absolute NET change, skip stablecoins
+        let primaryToken = null;
+        let maxNetAbs = 0;
+        for (const [mint, nets] of Object.entries(tokenNets)) {
+            if (SKIP_MINTS.has(mint)) continue;
+            const sym = resolveSymbol(mint);
+            if (sym && SKIP_TOKENS.has(sym)) continue;
+            const netIn = nets.in - nets.out;
+            const absNet = Math.abs(netIn);
+            if (absNet > 0 && absNet > maxNetAbs) {
+                maxNetAbs = absNet;
+                primaryToken = { mint, netIn, amount: Math.max(nets.in, nets.out) };
             }
         }
 
         const netSolSpent = (solOut - solIn) / 1e9;
         const netSolGained = (solIn - solOut) / 1e9;
 
-        if (netSolSpent > 0.001 && tokenInInfo && !tokenOutInfo) {
+        if (netSolSpent > 0.001 && primaryToken && primaryToken.netIn > 0) {
             result.action = 'Buy';
             result.amountSol = parseFloat(netSolSpent.toFixed(4));
-            result.tokenMint = tokenInInfo.mint;
-            result.tokenAmount = tokenInInfo.amount;
-        } else if (netSolGained > 0.001 && tokenOutInfo && !tokenInInfo) {
+            result.tokenMint = primaryToken.mint;
+            result.tokenAmount = primaryToken.amount;
+        } else if (netSolGained > 0.001 && primaryToken && primaryToken.netIn < 0) {
             result.action = 'Sell';
             result.amountSol = parseFloat(netSolGained.toFixed(4));
-            result.tokenMint = tokenOutInfo.mint;
-            result.tokenAmount = tokenOutInfo.amount;
+            result.tokenMint = primaryToken.mint;
+            result.tokenAmount = primaryToken.amount;
         }
 
         if (result.action && result.amountSol > 0) {
