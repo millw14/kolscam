@@ -402,10 +402,10 @@ function parseTransaction(tx, kolName, kolAvatar, walletAddress, tokenMetadataMa
 
 // Tokens to skip -- these are not memecoins
 const SKIP_TOKENS = new Set([
-    'SOL', 'WSOL', 'USDC', 'USDT', 'USDS',
-    'mSOL', 'jitoSOL', 'bSOL', 'stSOL', 'JitoSOL',
-    'WETH', 'WBTC', 'RAY', 'JLP', 'JTO', 'PYTH', 'JUP',
-    'BONK', // too common/stable
+    'SOL', 'WSOL', 'USDC', 'USDT', 'USDS', 'USD1', 'EURC', 'DAI', 'FRAX', 'TUSD', 'BUSD', 'USDH', 'UXD',
+    'mSOL', 'jitoSOL', 'bSOL', 'stSOL', 'JitoSOL', 'INF', 'hSOL', 'vSOL', 'jupSOL', 'LST',
+    'WETH', 'WBTC', 'RAY', 'JLP', 'JTO', 'PYTH', 'JUP', 'ORCA', 'MNDE', 'STEP',
+    'BONK',
 ]);
 
 // Known stablecoin / infrastructure mints to skip
@@ -413,6 +413,7 @@ const SKIP_MINTS = new Set([
     'So11111111111111111111111111111111111111112',  // Wrapped SOL
     'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
     'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', // USDT
+    'BJUH9GJLaMSLV1E7B3SQLCy9eCfyr6zsrm3WYMFQmpuN', // USD1
 ]);
 
 function isValidTrade(trade) {
