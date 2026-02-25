@@ -73,6 +73,7 @@ db.exec(`
 // --- Create indexes that depend on new columns (after migration) ---
 try { db.exec('CREATE INDEX IF NOT EXISTS idx_kol_trades_token_mint ON kol_trades(token_mint)'); } catch(e) { /* */ }
 try { db.exec('CREATE INDEX IF NOT EXISTS idx_kol_trades_action ON kol_trades(action)'); } catch(e) { /* */ }
+try { db.exec('CREATE INDEX IF NOT EXISTS idx_kol_trades_kol_name ON kol_trades(kol_name)'); } catch(e) { /* */ }
 
 // --- Submitted Wallets ---
 const insertWallet = db.prepare(`

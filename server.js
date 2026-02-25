@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import {
+    db,
     insertWallet, getAllWallets, getWalletByAddress,
     getCachedToken, upsertTokenCache, upsertTokenMarketData,
     insertTrade, getRecentTrades, getRecentTradesRaw, getTradesSince,
@@ -235,6 +236,7 @@ async function batchGetTokenMetadata(mints) {
 // ============================
 
 function parseTransaction(tx, kolName, kolAvatar, walletAddress, tokenMetadataMap) {
+    const SOL_MINT = 'So11111111111111111111111111111111111111112';
     const result = {
         signature: tx.signature,
         timestamp: tx.timestamp,
@@ -247,13 +249,17 @@ function parseTransaction(tx, kolName, kolAvatar, walletAddress, tokenMetadataMa
         amountSol: 0,
     };
 
-    // Extract token mint from tokenTransfers
+    // Skip non-swap transactions early
+    if (tx.description && /transferred|compress|decompress|burn|mint|create|close/i.test(tx.description)) {
+        return null;
+    }
+
+    // Helper: find first non-SOL mint from tokenTransfers
     let primaryMint = '';
     let primaryTokenAmount = 0;
-
     if (tx.tokenTransfers && tx.tokenTransfers.length > 0) {
         for (const transfer of tx.tokenTransfers) {
-            if (transfer.mint && transfer.mint !== 'So11111111111111111111111111111111111111112') {
+            if (transfer.mint && transfer.mint !== SOL_MINT) {
                 primaryMint = transfer.mint;
                 primaryTokenAmount = Math.abs(transfer.tokenAmount || 0);
                 break;
@@ -261,8 +267,61 @@ function parseTransaction(tx, kolName, kolAvatar, walletAddress, tokenMetadataMa
         }
     }
 
-    // STRATEGY 1: Parse Helius description (most reliable)
-    // Handles: "X swapped N SOL for M TOKEN" and "X swapped N TOKEN for M SOL"
+    // Helper: resolve token symbol from metadata
+    function resolveSymbol(mint) {
+        if (!mint || mint === SOL_MINT) return null;
+        const meta = tokenMetadataMap?.[mint];
+        return (meta && meta.symbol && meta.symbol.length <= 15) ? meta.symbol : null;
+    }
+
+    // ============================================================
+    // STRATEGY 0: Helius Swap Events (most accurate)
+    // Uses structured data from DEX program instruction parsing.
+    // ============================================================
+    const swap = tx.events?.swap;
+    if (swap) {
+        const nativeIn = swap.nativeInput;
+        const nativeOut = swap.nativeOutput;
+        const tokenIn = swap.tokenInputs?.find(t => t.mint !== SOL_MINT);
+        const tokenOut = swap.tokenOutputs?.find(t => t.mint !== SOL_MINT);
+
+        if (nativeIn && nativeIn.amount > 0 && tokenOut) {
+            // Spent SOL, got tokens = Buy
+            result.action = 'Buy';
+            result.amountSol = parseFloat((nativeIn.amount / 1e9).toFixed(4));
+            result.tokenMint = tokenOut.mint || primaryMint;
+            result.tokenAmount = Math.abs(tokenOut.rawTokenAmount?.tokenAmount
+                ? tokenOut.rawTokenAmount.tokenAmount / Math.pow(10, tokenOut.rawTokenAmount.decimals || 0)
+                : tokenOut.tokenAmount || primaryTokenAmount);
+            result.tokenSymbol = resolveSymbol(result.tokenMint);
+        } else if (nativeOut && nativeOut.amount > 0 && tokenIn) {
+            // Sent tokens, got SOL = Sell
+            result.action = 'Sell';
+            result.amountSol = parseFloat((nativeOut.amount / 1e9).toFixed(4));
+            result.tokenMint = tokenIn.mint || primaryMint;
+            result.tokenAmount = Math.abs(tokenIn.rawTokenAmount?.tokenAmount
+                ? tokenIn.rawTokenAmount.tokenAmount / Math.pow(10, tokenIn.rawTokenAmount.decimals || 0)
+                : tokenIn.tokenAmount || primaryTokenAmount);
+            result.tokenSymbol = resolveSymbol(result.tokenMint);
+        }
+
+        if (result.action && result.amountSol > 0) {
+            // Fill symbol from description if metadata didn't have it
+            if (!result.tokenSymbol) {
+                const descMatch = tx.description?.match(/swapped\s+[\d,.]+\s+(\S+)\s+for\s+[\d,.]+\s+(\S+)/i);
+                if (descMatch) {
+                    const [, tok1, tok2] = descMatch;
+                    result.tokenSymbol = tok1.toUpperCase() === 'SOL' ? tok2 : tok1;
+                }
+            }
+            if (result.tokenSymbol) return result;
+        }
+    }
+
+    // ============================================================
+    // STRATEGY 1: Parse Helius description (fallback)
+    // Handles: "X swapped N SOL for M TOKEN"
+    // ============================================================
     const swapMatch = tx.description?.match(/swapped\s+([\d,.]+)\s+(\S+)\s+for\s+([\d,.]+)\s+(\S+)/i);
     if (swapMatch) {
         const [, amt1, tok1, amt2, tok2] = swapMatch;
@@ -277,13 +336,10 @@ function parseTransaction(tx, kolName, kolAvatar, walletAddress, tokenMetadataMa
             result.amountSol = parseFloat(amt2.replace(/,/g, ''));
             result.tokenAmount = parseFloat(amt1.replace(/,/g, '')) || primaryTokenAmount;
         } else {
-            // Token-to-token swap (not SOL), skip
             return null;
         }
 
         result.tokenMint = primaryMint;
-
-        // If we didn't get token mint from transfers, try to look up by symbol
         if (!result.tokenMint && tokenMetadataMap) {
             for (const [mint, meta] of Object.entries(tokenMetadataMap)) {
                 if (meta && meta.symbol === result.tokenSymbol) {
@@ -296,74 +352,8 @@ function parseTransaction(tx, kolName, kolAvatar, walletAddress, tokenMetadataMa
         return result;
     }
 
-    // STRATEGY 1B: Handle "bought X of Y" / "sold X of Y" descriptions (some DEXes)
-    const buyMatch = tx.description?.match(/bought\s+([\d,.]+)\s+(\S+)/i);
-    const sellMatch = tx.description?.match(/sold\s+([\d,.]+)\s+(\S+)/i);
-    if (buyMatch) {
-        result.action = 'Buy';
-        result.tokenSymbol = buyMatch[2];
-        result.tokenAmount = parseFloat(buyMatch[1].replace(/,/g, ''));
-        result.tokenMint = primaryMint;
-    } else if (sellMatch) {
-        result.action = 'Sell';
-        result.tokenSymbol = sellMatch[2];
-        result.tokenAmount = parseFloat(sellMatch[1].replace(/,/g, ''));
-        result.tokenMint = primaryMint;
-    }
-
-    if (result.action && result.tokenSymbol) {
-        // Get SOL amount from native transfers
-        if (tx.nativeTransfers && tx.nativeTransfers.length > 0) {
-            let solAmount = 0;
-            for (const t of tx.nativeTransfers) {
-                if (t.fromUserAccount === walletAddress || t.toUserAccount === walletAddress) {
-                    solAmount = Math.max(solAmount, Math.abs(t.amount));
-                }
-            }
-            if (solAmount > 0) result.amountSol = parseFloat((solAmount / 1e9).toFixed(4));
-        }
-        if (result.amountSol > 0) return result;
-    }
-
-    // Skip transfers entirely - we only want buy/sell
-    if (tx.description && /transferred|compress|decompress|burn|mint|create|close/i.test(tx.description)) {
-        return null;
-    }
-
-    // STRATEGY 2: Token transfers + metadata map
-    if (tx.tokenTransfers && tx.tokenTransfers.length > 0) {
-        for (const transfer of tx.tokenTransfers) {
-            if (transfer.mint && transfer.mint !== 'So11111111111111111111111111111111111111112') {
-                const metadata = tokenMetadataMap?.[transfer.mint];
-                if (metadata && metadata.symbol && metadata.symbol.length <= 12) {
-                    result.tokenSymbol = metadata.symbol;
-                }
-                result.tokenMint = transfer.mint;
-                result.tokenAmount = Math.abs(transfer.tokenAmount || 0);
-                result.action = transfer.toUserAccount === walletAddress ? 'Buy' : 'Sell';
-                break;
-            }
-        }
-    }
-
-    // If no action determined, skip
-    if (!result.action) return null;
-
-    // STRATEGY 3: SOL amount from native transfers
-    if (tx.nativeTransfers && tx.nativeTransfers.length > 0 && result.amountSol === 0) {
-        let solAmount = 0;
-        for (const t of tx.nativeTransfers) {
-            if (t.fromUserAccount === walletAddress || t.toUserAccount === walletAddress) {
-                solAmount = Math.max(solAmount, Math.abs(t.amount));
-            }
-        }
-        if (solAmount === 0 && tx.nativeTransfers.length > 0) {
-            solAmount = Math.max(...tx.nativeTransfers.map(t => Math.abs(t.amount)));
-        }
-        result.amountSol = parseFloat((solAmount / 1e9).toFixed(4));
-    }
-
-    return result;
+    // No reliable parse available -- skip rather than record bad data
+    return null;
 }
 
 // Tokens to skip -- these are not memecoins
@@ -647,6 +637,28 @@ app.post('/api/backfill', async (req, res) => {
     console.log('📥 Manual backfill triggered via API');
     res.json({ success: true, message: 'Backfill started (100 txns/KOL)' });
     runBackgroundScan(true);
+});
+
+/**
+ * POST /api/reset-trades - Wipe all trade data and trigger a clean backfill
+ */
+app.post('/api/reset-trades', async (req, res) => {
+    if (!HELIUS_ENABLED) {
+        return res.status(400).json({ error: 'Helius is disabled' });
+    }
+    if (scannerPhase === 'scanning') {
+        return res.status(409).json({ error: 'Scan already in progress' });
+    }
+    try {
+        const before = getTradeCount.get();
+        db.exec('DELETE FROM kol_trades');
+        console.log(`🗑️ Wiped ${before.count} trades from DB. Starting clean backfill...`);
+        res.json({ success: true, wiped: before.count, message: 'Trades wiped. Clean backfill starting...' });
+        runBackgroundScan(true);
+    } catch (err) {
+        console.error('Reset error:', err);
+        res.status(500).json({ error: 'Failed to reset' });
+    }
 });
 
 /**
