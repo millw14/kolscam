@@ -16,7 +16,7 @@ export const COL_DATA = [
   },
   {
     "Name": "REDARDILY",
-    "Twitter Handle": "https://x.com/rightily",
+    "Twitter Handle": "https://x.com/retardily",
     "Wallet Address": "5XVKfruE4Zzeoz3aqBQfFMb5aSscY5nSyc6VwtQwNiid",
     "Avatar": "/avatars/5XVKfruE4Zzeoz3aqBQfFMb5aSscY5nSyc6VwtQwNiid.png",
     "Side Wallets": ["5XVKfruE4Zzeoz3aqBQfFMb5aSscY5nSyc6VwtQwNiid", "AcoNeFQsTPYs7ZrH8RMWaxxGJTTQJJ4H5aTXmptaz5UK", "E597nSTtQjV4PfLuJZcvF9SFByqvYmNduoFK5QsoqCex", "3GdWvubXgGLGDYcPgEL3i2ZoFchd4bm4wHiWPbVum4iq", "DqHhW6NyA6njQ3EoqHhkat7VHFeKzQyiHgkCEooCCMLe", "89LacMzfc2GU9474p9j5Qr2qRdb45X93Keivus4Nd82h", "4zntFWPjop3oTHKk3by3eusdJixyWZT7SWTmhBapoFVy", "13VShDethuqKeF4VMDSMWM78B4MmGwzYFSV6WXTuqQYa", "DXU65912VjiPUhKR37TLiHCrbp4uNHVNNZiBdLv1uAx1"]
@@ -310,21 +310,21 @@ export const COL_DATA = [
   },
   {
     "Name": "h14",
-    "Twitter Handle": "https://x.com/h14gg",
+    "Twitter Handle": "https://x.com/H14onX",
     "Wallet Address": "BJXjRq566xt66pcCMLPSuNxyUpPNBdJGP56S7fMda",
     "Avatar": "/avatars/BJXjRq566xt66pcCMLPSuNxyUpPNBdJGP56S7fMda.png",
     "Side Wallets": []
   },
   {
     "Name": "Cented",
-    "Twitter Handle": "https://x.com/CentedCrypto",
+    "Twitter Handle": "https://x.com/Cented7",
     "Wallet Address": "CyaE1VxvBrahnPWkqm5VsdCvyS2QmNht2UFrKJHga54o",
     "Avatar": "/avatars/CyaE1VxvBrahnPWkqm5VsdCvyS2QmNht2UFrKJHga54o.png",
     "Side Wallets": []
   },
   {
     "Name": "Yokai Ryujin",
-    "Twitter Handle": "https://x.com/YokaiRyujin",
+    "Twitter Handle": "https://x.com/YokaiCapital",
     "Wallet Address": "2w3zDW2e1KjYtM2pHTkgh78L8DjMrC6fuB9uhwKNigTs",
     "Avatar": "/avatars/2w3zDW2e1KjYtM2pHTkgh78L8DjMrC6fuB9uhwKNigTs.png",
     "Side Wallets": []
@@ -338,42 +338,42 @@ export const COL_DATA = [
   },
   {
     "Name": "Jijo",
-    "Twitter Handle": "https://x.com/jijo_xyz",
+    "Twitter Handle": "https://x.com/jijo_exe",
     "Wallet Address": "4BdKaxN8G6ka4GYtQQWk4G4dZRUTX2vQH9GcXdBREFUk",
     "Avatar": "/avatars/4BdKaxN8G6ka4GYtQQWk4G4dZRUTX2vQH9GcXdBREFUk.png",
     "Side Wallets": []
   },
   {
     "Name": "Megz",
-    "Twitter Handle": "https://x.com/megz_sol",
+    "Twitter Handle": "https://x.com/DeltaXtc",
     "Wallet Address": "CECN4BW4DKnbyddkd9FhWVR5dotzKhQr5p7DUPhQ55Du",
     "Avatar": "/avatars/CECN4BW4DKnbyddkd9FhWVR5dotzKhQr5p7DUPhQ55Du.png",
     "Side Wallets": []
   },
   {
     "Name": "Kadenox",
-    "Twitter Handle": "https://x.com/Kadenox_",
+    "Twitter Handle": "https://x.com/kadenox",
     "Wallet Address": "B32QbbdDAyhvUQzjcaM5j6ZVKwjCxAwGH5Xgvb9SJqnC",
     "Avatar": "/avatars/B32QbbdDAyhvUQzjcaM5j6ZVKwjCxAwGH5Xgvb9SJqnC.png",
     "Side Wallets": []
   },
   {
     "Name": "Fozzy",
-    "Twitter Handle": "https://x.com/fozzy_bear1",
+    "Twitter Handle": "https://x.com/fozzydiablo",
     "Wallet Address": "B9oKseVKRntTvfADyaUo7oVmoyVbBfUf4NKyQc4KK2D",
     "Avatar": "/avatars/B9oKseVKRntTvfADyaUo7oVmoyVbBfUf4NKyQc4KK2D.png",
     "Side Wallets": []
   },
   {
     "Name": "Kev",
-    "Twitter Handle": "https://x.com/Kev_Sol_",
+    "Twitter Handle": "https://x.com/KevBroSol",
     "Wallet Address": "BTf4A2exGK9BCVDNzy65b9dUzXgMqB4weVkvTMFQsadd",
     "Avatar": "/avatars/BTf4A2exGK9BCVDNzy65b9dUzXgMqB4weVkvTMFQsadd.png",
     "Side Wallets": []
   },
   {
     "Name": "Cooker",
-    "Twitter Handle": "https://x.com/CookerSol",
+    "Twitter Handle": "https://x.com/CookerFlips",
     "Wallet Address": "8deJ9xeUvXSJwicYptA9mHsU2rN2pDx37KWzkDkEXhU6",
     "Avatar": "/avatars/8deJ9xeUvXSJwicYptA9mHsU2rN2pDx37KWzkDkEXhU6.png",
     "Side Wallets": []
