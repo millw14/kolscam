@@ -18,7 +18,7 @@ export const COL_DATA = [
     "Name": "REDARDILY",
     "Twitter Handle": "https://x.com/rightily",
     "Wallet Address": "5XVKfruE4Zzeoz3aqBQfFMb5aSscY5nSyc6VwtQwNiid",
-    "Avatar": "",
+    "Avatar": "/avatars/5XVKfruE4Zzeoz3aqBQfFMb5aSscY5nSyc6VwtQwNiid.png",
     "Side Wallets": ["5XVKfruE4Zzeoz3aqBQfFMb5aSscY5nSyc6VwtQwNiid", "AcoNeFQsTPYs7ZrH8RMWaxxGJTTQJJ4H5aTXmptaz5UK", "E597nSTtQjV4PfLuJZcvF9SFByqvYmNduoFK5QsoqCex", "3GdWvubXgGLGDYcPgEL3i2ZoFchd4bm4wHiWPbVum4iq", "DqHhW6NyA6njQ3EoqHhkat7VHFeKzQyiHgkCEooCCMLe", "89LacMzfc2GU9474p9j5Qr2qRdb45X93Keivus4Nd82h", "4zntFWPjop3oTHKk3by3eusdJixyWZT7SWTmhBapoFVy", "13VShDethuqKeF4VMDSMWM78B4MmGwzYFSV6WXTuqQYa", "DXU65912VjiPUhKR37TLiHCrbp4uNHVNNZiBdLv1uAx1"]
   },
   {
@@ -60,14 +60,14 @@ export const COL_DATA = [
     "Name": "DANI WORLDWIDE",
     "Twitter Handle": "https://x.com/DaniWorldwide",
     "Wallet Address": "AuPp4YTMTyqxYXQnHc5KUc6pUuCSsHQpBJhgnD45yqrf",
-    "Avatar": "",
+    "Avatar": "/avatars/AuPp4YTMTyqxYXQnHc5KUc6pUuCSsHQpBJhgnD45yqrf.png",
     "Side Wallets": ["GFs77ZfMxeFQ4MLBPZpyy9tcZhroLxgBJEGAm39cQDfg", "Aw1ici3XZ2AfBUfy6apUHRQiTEJGm2Hybhqj2Jfxf2mS", "Hrne1Prq9r19vSfW7q68ReXeKVrEmkfFneK7q3WRKY9J", "7i4Nq5qhRZtyQ483y2C7w74GRnAaQcofzG4QTCXUEEH6", "BKWFf5zmw7PLmBZPUaHk8YXgZbZX5HHf7DT3LV6ViAJy", "GbgdsquZQc1VMzisUmEJG9yLEjM7UNN1aL1mCoTRFqQE", "G7mfcf5GbZezcBKqcDo5u16TSLARTVxTRSjXxDYbVnaq"]
   },
   {
     "Name": "HADES",
     "Twitter Handle": "https://x.com/HadesCooks",
     "Wallet Address": "BR9DNf1A1U4ssHrvFSd4Pp3CGgANUWMSnrXftzR3QB17",
-    "Avatar": "",
+    "Avatar": "/avatars/BR9DNf1A1U4ssHrvFSd4Pp3CGgANUWMSnrXftzR3QB17.png",
     "Side Wallets": ["FFiF6cZJ8QtDgMQZKsnYaVjgMZqAQP1NX9EC78j7EkdM", "8iTp7hZhsm3VajWEiUvzBQshQEfdNaup8cppbAdJJVHg", "Gbf9WEjcKppwUL58u2jJXiaz6CD78BkWeRxF8jEnhBoR"]
   },
   {
@@ -88,7 +88,7 @@ export const COL_DATA = [
     "Name": "Chairman",
     "Twitter Handle": "https://x.com/Chairman_DN",
     "Wallet Address": "Be24Gbf5KisDk1LcWWZsBn8dvB816By7YzYF5zWZnRR6",
-    "Avatar": "",
+    "Avatar": "/avatars/Be24Gbf5KisDk1LcWWZsBn8dvB816By7YzYF5zWZnRR6.png",
     "Side Wallets": []
   },
   {
@@ -102,7 +102,7 @@ export const COL_DATA = [
     "Name": "SpiderCrypto",
     "Twitter Handle": "https://x.com/SpiderCrypto0x",
     "Wallet Address": "73f1cxg7cMM52fdLjKXcadKhi7GWV6MSZkWrdq7w7bNM",
-    "Avatar": "",
+    "Avatar": "/avatars/73f1cxg7cMM52fdLjKXcadKhi7GWV6MSZkWrdq7w7bNM.png",
     "Side Wallets": ["7RSuMr3MHCRipvFT7mmVbc5gjMs5h6Ga2Am6HGAVEW9A", "BDRubJ9jipMhGEte1279ZbqVC4bWrvZ7A4acfJfSRHYY", "7HewmqQeqNfTqd2n78CEHkhkUqTp4PYdEGn8tKhLQjYu"]
   },
   {
@@ -137,7 +137,7 @@ export const COL_DATA = [
     "Name": "Lexapro",
     "Twitter Handle": "https://x.com/LexaproTrader",
     "Wallet Address": "8yJFWmVTQq69p6VJxGwpzW7ii7c5J9GRAtHCNMMQPydj",
-    "Avatar": "",
+    "Avatar": "/avatars/8yJFWmVTQq69p6VJxGwpzW7ii7c5J9GRAtHCNMMQPydj.png",
     "Side Wallets": []
   },
   {
@@ -165,21 +165,21 @@ export const COL_DATA = [
     "Name": "Slingoor",
     "Twitter Handle": "https://x.com/slingoorio",
     "Wallet Address": "6mWEJG9LoRdto8TwTdZxmnJpkXpTsEerizcGiCNZvzXd",
-    "Avatar": "",
+    "Avatar": "/avatars/6mWEJG9LoRdto8TwTdZxmnJpkXpTsEerizcGiCNZvzXd.png",
     "Side Wallets": ["GZwjWyB98wcnLUJENQ2TYRdsAUqPUur5NQtM2eqzUVjU", "7NNDtyfHMrjhMoBzi3QyEmpp73gmCxWxqM8cm3unVjUS", "Hv9ZVtq6DkPiGru9yzQR4v6tfhRNPhgeruDc3MgodSUe", "6mWEJG9LoRdto8TwTdZxmnJpkXpTsEerizcGiCNZvzXd", "Ep2DxWxwgqDgN4mTrL1BtZh69HJ3KfAQ47gbT6vpzxY4", "2G86foXQaSJRwgSgjsXrDxkLFvnPTCDVfZWm9rwQbB9E", "5aYhP7NXGHm4vQ9FdiYRgr53sHBMHVsCrFhbPfrCh3mV", "7wFqF243x12tZ9H7zkoPjEKnQRxEj3RgWkAwCBMsF1DZ", "Cce9MqAGnR996GchYrgcqe6NZYRxfbKTYg5vmDKwpump"]
   },
   {
     "Name": "Waddles",
     "Twitter Handle": "https://x.com/waddles_eth",
     "Wallet Address": "73LnJ7G9ffBDjEBGgJDdgvLUhD5APLonKrNiHsKDCw5B",
-    "Avatar": "",
+    "Avatar": "/avatars/73LnJ7G9ffBDjEBGgJDdgvLUhD5APLonKrNiHsKDCw5B.png",
     "Side Wallets": ["Ewn4p1M6RHrb7NRQRnK9kfmTzqc1g5x9NhuTvhwu7i94", "9GTVJLduxXwUR6otWSYgDLatYJCab61wHB8Vcoi2FNEf", "7G73LMoyNMUjwNrkuokrMwFPodS4LVLeizHaNCu6BzoL", "E4vD9NJ5i97HnrxoCDtgXmTbAwQLXbdeX2sH7D6CMJy5"]
   },
   {
     "Name": "Zuki",
     "Twitter Handle": "https://x.com/zukiweb3",
     "Wallet Address": "922VvmmYDHV9KMTJJ71Y5Yd3Vn7cfJuFasLNSsZPygrG",
-    "Avatar": "",
+    "Avatar": "/avatars/922VvmmYDHV9KMTJJ71Y5Yd3Vn7cfJuFasLNSsZPygrG.png",
     "Side Wallets": ["BJrhtoMD1D6mnD4ruaDPTERy3bZjXZ4DY4rw1gVncz5C"]
   },
   {
@@ -207,7 +207,7 @@ export const COL_DATA = [
     "Name": "Cap",
     "Twitter Handle": "https://x.com/himothy",
     "Wallet Address": "CAPn1yH4oSywsxGU456jfgTrSSUidf9jgeAnHceNUJdw",
-    "Avatar": "",
+    "Avatar": "/avatars/CAPn1yH4oSywsxGU456jfgTrSSUidf9jgeAnHceNUJdw.png",
     "Side Wallets": ["FdWM3wofrQpRMuvDZqbP4zfXddYWw2CjNdwBcqboC8KD"]
   },
   {
@@ -235,28 +235,28 @@ export const COL_DATA = [
     "Name": "Xet",
     "Twitter Handle": "https://x.com/xet",
     "Wallet Address": "9yGxZ43ngT7LvwquVdUAYPvJzVyY65cS6mQvuJXjTEUc",
-    "Avatar": "",
+    "Avatar": "/avatars/9yGxZ43ngT7LvwquVdUAYPvJzVyY65cS6mQvuJXjTEUc.png",
     "Side Wallets": ["HNs8oatWhSx9j52FGCkruGSYF89rHYvckQHFY5Cz9ACH", "6iwsM2pNWSCGxZ3q3aTEX7oEmcp99nEZmjQeuRu8o18q", "nsZtEE77jV81bx7eF9Gt1hex1t2Aa7hhu5191Hin8cF", "F4GnRh2tvdVLoArFrrUJD89Vy5ygAtGGf7G4Y9UqiZHS", "A2P3fshPYUgCd2h1Zp8hZC6FgWdY7JMMsejc4yKVpzje"]
   },
   {
     "Name": "Frank",
     "Twitter Handle": "https://x.com/frankdegods",
     "Wallet Address": "498g1rVnFcnjBjpfw1xyqA1WvgQXUU8RWuELjxkjAayQ",
-    "Avatar": "",
+    "Avatar": "/avatars/498g1rVnFcnjBjpfw1xyqA1WvgQXUU8RWuELjxkjAayQ.png",
     "Side Wallets": []
   },
   {
     "Name": "Missora",
     "Twitter Handle": "https://x.com/missoralways",
     "Wallet Address": "5DVsXQbtPT7bUc6VTSXfdNP3rbqzyi5yfCmMEqDpfShv",
-    "Avatar": "",
+    "Avatar": "/avatars/5DVsXQbtPT7bUc6VTSXfdNP3rbqzyi5yfCmMEqDpfShv.png",
     "Side Wallets": ["66gDJAy89NXfH1boMchUNx9trNbNhnbkCg3gMGUTx5WG"]
   },
   {
     "Name": "Smokey",
     "Twitter Handle": "https://x.com/smokey0x",
     "Wallet Address": "6My97BBVoJz3j7mQWFVz5pykFxMsCs44gjhaqmczcAND",
-    "Avatar": "",
+    "Avatar": "/avatars/6My97BBVoJz3j7mQWFVz5pykFxMsCs44gjhaqmczcAND.png",
     "Side Wallets": []
   },
   {
@@ -298,7 +298,7 @@ export const COL_DATA = [
     "Name": "Smokez",
     "Twitter Handle": "https://x.com/SmokezXBT",
     "Wallet Address": "5t9xBNuDdGTGpjaPTx6hKd7sdRJbvtKS8Mhq6qVbo8Qz",
-    "Avatar": "",
+    "Avatar": "/avatars/5t9xBNuDdGTGpjaPTx6hKd7sdRJbvtKS8Mhq6qVbo8Qz.png",
     "Side Wallets": ["hMpKetAVAXyfRVghkbpzvr4zX189ygtpkHWEGWq8mpz", "F3N2B45rXQ3ZJeJWPuu4vn7ihT9VfJZ4XYTdUrYRP9pD"]
   },
   {
@@ -312,70 +312,70 @@ export const COL_DATA = [
     "Name": "h14",
     "Twitter Handle": "https://x.com/h14gg",
     "Wallet Address": "BJXjRq566xt66pcCMLPSuNxyUpPNBdJGP56S7fMda",
-    "Avatar": "",
+    "Avatar": "/avatars/BJXjRq566xt66pcCMLPSuNxyUpPNBdJGP56S7fMda.png",
     "Side Wallets": []
   },
   {
     "Name": "Cented",
     "Twitter Handle": "https://x.com/CentedCrypto",
     "Wallet Address": "CyaE1VxvBrahnPWkqm5VsdCvyS2QmNht2UFrKJHga54o",
-    "Avatar": "",
+    "Avatar": "/avatars/CyaE1VxvBrahnPWkqm5VsdCvyS2QmNht2UFrKJHga54o.png",
     "Side Wallets": []
   },
   {
     "Name": "Yokai Ryujin",
     "Twitter Handle": "https://x.com/YokaiRyujin",
     "Wallet Address": "2w3zDW2e1KjYtM2pHTkgh78L8DjMrC6fuB9uhwKNigTs",
-    "Avatar": "",
+    "Avatar": "/avatars/2w3zDW2e1KjYtM2pHTkgh78L8DjMrC6fuB9uhwKNigTs.png",
     "Side Wallets": []
   },
   {
     "Name": "Exotic",
     "Twitter Handle": "https://x.com/ExoticSolana",
     "Wallet Address": "Dwo2kj88YYhwcFJiybTjXezR9a6QjkMASz5xXD7kujXC",
-    "Avatar": "",
+    "Avatar": "/avatars/Dwo2kj88YYhwcFJiybTjXezR9a6QjkMASz5xXD7kujXC.png",
     "Side Wallets": []
   },
   {
     "Name": "Jijo",
     "Twitter Handle": "https://x.com/jijo_xyz",
     "Wallet Address": "4BdKaxN8G6ka4GYtQQWk4G4dZRUTX2vQH9GcXdBREFUk",
-    "Avatar": "",
+    "Avatar": "/avatars/4BdKaxN8G6ka4GYtQQWk4G4dZRUTX2vQH9GcXdBREFUk.png",
     "Side Wallets": []
   },
   {
     "Name": "Megz",
     "Twitter Handle": "https://x.com/megz_sol",
     "Wallet Address": "CECN4BW4DKnbyddkd9FhWVR5dotzKhQr5p7DUPhQ55Du",
-    "Avatar": "",
+    "Avatar": "/avatars/CECN4BW4DKnbyddkd9FhWVR5dotzKhQr5p7DUPhQ55Du.png",
     "Side Wallets": []
   },
   {
     "Name": "Kadenox",
     "Twitter Handle": "https://x.com/Kadenox_",
     "Wallet Address": "B32QbbdDAyhvUQzjcaM5j6ZVKwjCxAwGH5Xgvb9SJqnC",
-    "Avatar": "",
+    "Avatar": "/avatars/B32QbbdDAyhvUQzjcaM5j6ZVKwjCxAwGH5Xgvb9SJqnC.png",
     "Side Wallets": []
   },
   {
     "Name": "Fozzy",
     "Twitter Handle": "https://x.com/fozzy_bear1",
     "Wallet Address": "B9oKseVKRntTvfADyaUo7oVmoyVbBfUf4NKyQc4KK2D",
-    "Avatar": "",
+    "Avatar": "/avatars/B9oKseVKRntTvfADyaUo7oVmoyVbBfUf4NKyQc4KK2D.png",
     "Side Wallets": []
   },
   {
     "Name": "Kev",
     "Twitter Handle": "https://x.com/Kev_Sol_",
     "Wallet Address": "BTf4A2exGK9BCVDNzy65b9dUzXgMqB4weVkvTMFQsadd",
-    "Avatar": "",
+    "Avatar": "/avatars/BTf4A2exGK9BCVDNzy65b9dUzXgMqB4weVkvTMFQsadd.png",
     "Side Wallets": []
   },
   {
     "Name": "Cooker",
     "Twitter Handle": "https://x.com/CookerSol",
     "Wallet Address": "8deJ9xeUvXSJwicYptA9mHsU2rN2pDx37KWzkDkEXhU6",
-    "Avatar": "",
+    "Avatar": "/avatars/8deJ9xeUvXSJwicYptA9mHsU2rN2pDx37KWzkDkEXhU6.png",
     "Side Wallets": []
   }
 ];
