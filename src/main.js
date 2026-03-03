@@ -1007,6 +1007,19 @@ if (heroSearchInput) heroSearchInput.addEventListener('keypress', e => { if (e.k
 // COPY
 // ============================
 
+const heroCA = document.getElementById('hero-token-ca');
+if (heroCA) {
+    heroCA.addEventListener('click', () => {
+        navigator.clipboard.writeText('6dSWv61ji8niYVEoCH3MBryX8NrTrMNW7F8oPGBCpump').then(() => {
+            const orig = heroCA.innerHTML;
+            heroCA.innerHTML = '<i class="ri-check-line"></i> Copied!';
+            heroCA.style.borderColor = 'var(--accent-green)';
+            heroCA.style.color = 'var(--accent-green)';
+            setTimeout(() => { heroCA.innerHTML = orig; heroCA.style.borderColor = ''; heroCA.style.color = ''; }, 1500);
+        });
+    });
+}
+
 document.addEventListener('click', (e) => {
     // Copy wallet
     const icon = e.target.closest('.copy-icon');

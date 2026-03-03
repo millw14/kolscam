@@ -141,6 +141,30 @@ ul { list-style: none; }
     border-color: var(--text-secondary);
 }
 
+.nav-token-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: rgba(255, 59, 59, 0.1);
+    border: 1px solid rgba(255, 59, 59, 0.3);
+    color: #ff3b3b;
+    font-weight: 600;
+    font-size: 0.82rem;
+    text-decoration: none;
+    transition: all 0.2s;
+    font-family: var(--font-mono, 'Space Grotesk', monospace);
+}
+.nav-token-link:hover {
+    background: rgba(255, 59, 59, 0.2);
+    border-color: #ff3b3b;
+    color: #fff;
+}
+.nav-token-link i {
+    font-size: 1rem;
+}
+
 .pump-btn {
     background: rgba(0, 224, 146, 0.1);
     border: 1px solid rgba(0, 224, 146, 0.2);
@@ -256,6 +280,57 @@ ul { list-style: none; }
     background: none;
     -webkit-text-fill-color: var(--accent-red);
     text-shadow: 0 0 20px rgba(255, 42, 42, 0.4);
+}
+
+.hero-token-banner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.hero-token-trade {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 22px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #ff2a2a, #ff5555);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: all 0.25s;
+    box-shadow: 0 0 20px rgba(255, 42, 42, 0.3);
+}
+.hero-token-trade:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 30px rgba(255, 42, 42, 0.5);
+}
+.hero-token-ca {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-family: var(--font-mono, 'Space Grotesk', monospace);
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+}
+.hero-token-ca:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+}
+.hero-token-ca i {
+    font-size: 0.9rem;
+    opacity: 0.6;
 }
 
 .hero-search {
